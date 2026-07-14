@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { z } from "zod";
 
-export const demoRoleSchema = z.enum(["viewer", "trader"]);
+export const demoRoleSchema = z.enum(["viewer", "trader", "admin"]);
 export type DemoRole = z.infer<typeof demoRoleSchema>;
 
 export interface DemoUser {
@@ -15,6 +15,7 @@ export interface DemoUser {
 const demoUsers: Record<DemoRole, DemoUser> = {
   trader: { role: "trader", roleLabel: "Demo Trader", name: "Alex Morgan", email: "demo.trader@finops.local", initials: "AM" },
   viewer: { role: "viewer", roleLabel: "Demo Viewer", name: "Jordan Lee", email: "demo.viewer@finops.local", initials: "JL" },
+  admin: { role: "admin", roleLabel: "Demo Admin", name: "Sam Rivera", email: "demo.admin@finops.local", initials: "SR" },
 };
 
 export const SESSION_COOKIE = "finops_demo_session";

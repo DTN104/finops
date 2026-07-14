@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { EquityBars } from "@/components/dashboard/equity-bars";
 import { AppShell } from "@/components/shell/app-shell";
@@ -61,11 +62,11 @@ export default async function DashboardPage() {
           </article>
 
           <article className="h-[156px] rounded-[var(--radius-lg)] border border-border-default bg-surface p-[14px] lg:h-[284px] lg:p-[18px]">
-            <div className="flex h-5 items-center justify-between lg:h-7"><h2 className="text-[14px] leading-5 font-medium lg:text-[20px] lg:leading-7 lg:font-semibold">Watchlist</h2><span className="type-body-s hidden text-profit lg:block">View market</span></div>
+            <div className="flex h-5 items-center justify-between lg:h-7"><h2 className="text-[14px] leading-5 font-medium lg:text-[20px] lg:leading-7 lg:font-semibold">Watchlist</h2><Link href="/market" className="type-body-s hidden text-profit hover:underline lg:block">View market</Link></div>
             <div>
               {dashboardData.watchlist.map((quote, index) => (
                 <div key={quote.symbol} className={`grid h-[38px] grid-cols-3 items-center border-t border-border-default type-data-s lg:h-11 ${index > 2 ? "hidden lg:grid" : ""}`}>
-                  <span className="type-data-m text-primary">{quote.symbol}</span>
+                  {quote.symbol === "FPT" ? <Link href="/market/FPT" className="type-data-m text-primary hover:text-profit">{quote.symbol}</Link> : <span className="type-data-m text-primary">{quote.symbol}</span>}
                   <span className="text-center text-secondary">{quote.price}</span>
                   <span className={`text-right ${quote.direction === "up" ? "text-profit" : "text-loss"}`}><span className="sr-only">{quote.direction === "up" ? "Gain" : "Loss"}: </span>{quote.change}</span>
                 </div>

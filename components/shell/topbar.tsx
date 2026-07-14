@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Topbar() {
   return (
     <header className="hidden h-[72px] shrink-0 items-center justify-between border-b border-border-default px-6 lg:flex">
@@ -6,7 +8,7 @@ export function Topbar() {
       <div className="flex items-center gap-[10px]">
         <span className="type-label-m rounded-full bg-profit-bg px-[10px] py-[6px] text-profit">MARKET OPEN</span>
         <span className="type-data-s text-muted">32 ms</span>
-        <button disabled className="h-10 w-[148px] rounded-[var(--radius-sm)] border border-border-default bg-surface-raised text-primary disabled:opacity-100" title="Trading is not included in this slice">Quick trade</button>
+        <Link href="/market/FPT" className="flex h-10 w-[148px] items-center justify-center rounded-[var(--radius-sm)] border border-border-default bg-surface-raised text-primary">Quick trade</Link>
       </div>
     </header>
   );
