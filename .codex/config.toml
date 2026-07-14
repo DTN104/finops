@@ -1,0 +1,4 @@
+[mcp_servers.figma]
+url = "https://mcp.figma.com/mcp"
+auth = "oauth"
+tool_timeout_sec = 120
