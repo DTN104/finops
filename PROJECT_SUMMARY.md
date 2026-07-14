@@ -2,16 +2,17 @@
 
 > Last updated: 2026-07-15  
 > Repository version: `0.1.0`  
-> Status: Two working vertical slices are implemented; the broader Figma product remains partially planned.
+> Status: Three working vertical slices are implemented; the broader Figma product remains partially planned.
 
 ## 1. Executive summary
 
 FinOps is a responsive professional paper-trading portfolio application. It demonstrates a realistic financial workspace without connecting to real brokerage infrastructure, real funds, real securities, or internal company data.
 
-The current application supports two end-to-end vertical slices:
+The current application supports three end-to-end vertical slices:
 
 1. `Landing → Login → Demo user → Dashboard`
 2. `Dashboard → Market → FPT stock detail → Buy or Sell → Confirm → Success`
+3. `Portfolio Overview → Position Detail` and `Orders → Cancel → Confirmation`
 
 The implementation is built with the Next.js App Router, strict TypeScript, Tailwind CSS, Server Components by default, an HTTP-only mock session, Zustand for browser-side portfolio state, Zod for order validation, and TanStack Table for the market experience.
 
@@ -46,7 +47,7 @@ The broader product scope documented in Figma includes:
 - Viewer, Trader, and Admin permissions.
 - Desktop and mobile experiences.
 
-Only the landing/authentication/dashboard and market/FPT trading slices are implemented at this time. See [Current limitations and remaining scope](#17-current-limitations-and-remaining-scope) for the exact boundary.
+Landing/authentication/dashboard, market/FPT trading, portfolio/position detail, and order history/cancellation are implemented. See [Current limitations and remaining scope](#17-current-limitations-and-remaining-scope) for the exact boundary.
 
 ## 3. Design source of truth
 
@@ -68,7 +69,7 @@ The implementation uses one primary responsive switch at Tailwind's `lg` breakpo
 - At or above `1024px`: desktop composition.
 - No separate tablet design has been invented because Figma does not define one.
 
-The implemented screens were visually compared against the corresponding Figma desktop and mobile frames. The trading overlays were also checked against authored dimensions, including the desktop order drawer, confirmation dialogs, success dialogs, and mobile buy sheet.
+The implemented screens were visually compared against the corresponding Figma desktop and mobile frames. This includes Portfolio Overview, FPT Position Detail, Orders, the Cancel Order dialog, trading overlays, and mobile sheets.
 
 Supporting design documentation is stored in `docs/`:
 
@@ -124,6 +125,9 @@ The product specification names Recharts and TanStack Virtual for later phases. 
 | `/dashboard` | Dynamic Server Component | Authenticated | Portfolio metrics, equity curve, watchlist, and holdings |
 | `/market` | Dynamic Server Component + client table | Authenticated | Realtime-style 5,000-instrument market |
 | `/market/[symbol]` | Dynamic Server Component + client trading flow | Authenticated | FPT stock detail and mock order entry |
+| `/portfolio` | Dynamic Server Component + client portfolio | Authenticated | Calculated portfolio metrics, allocation, performance, and holdings |
+| `/portfolio/[symbol]` | Dynamic Server Component + client position detail | Authenticated | FPT position metrics, tax lots, chart, and activity |
+| `/orders` | Dynamic Server Component + client order manager | Authenticated | Filtered order history, detail, and cancellation |
 | `/dev/components` | Static development route | Public in current code | Shared component preview/gallery |
 
 `/market/[symbol]` currently accepts only `FPT`, case-insensitively. Any other symbol calls Next.js `notFound()`.
@@ -132,9 +136,6 @@ The product specification names Recharts and TanStack Virtual for later phases. 
 
 The architecture documents propose the following future routes:
 
-- `/portfolio`
-- `/portfolio/[symbol]`
-- `/orders`
 - `/corporate-actions`
 - `/corporate-actions/[id]`
 - `/corporate-actions/new`
@@ -245,10 +246,10 @@ FPT detail
   → Confirmation dialog
   → Shared portfolio submission
   → Success dialog
-  → Dashboard or Market
+  → Portfolio or Market
 ```
 
-An accepted mock buy order is stored as `OPEN` and immediately reserves its estimated total from buying power. There is no fill simulator yet, so the FPT position itself is not increased.
+An accepted mock buy order is stored as `OPEN`, appears immediately in Orders, and reserves its estimated total from buying power. When the deterministic store fill action marks it filled, cash and the weighted-average position are updated.
 
 ### 6.6 Sell flow
 
@@ -268,7 +269,33 @@ Current default sell order:
 | Estimated realized P&L | +₫11,360,000 |
 | Position after a fill | 1,600 shares |
 
-An accepted sell order is stored as `OPEN`. The persisted position remains unchanged until a future fill engine exists, which is also explained in the success state.
+An accepted sell order is stored as `OPEN` and appears immediately in Orders. A fill reduces the position, credits net proceeds, and records realized P&L.
+
+### 6.7 Portfolio Overview and Position Detail
+
+Portfolio Overview reads the shared Zustand trading state and calculates:
+
+- Net asset value from cash plus current market value.
+- Market value and cost basis for every position.
+- Unrealized and total P&L in currency and percentage terms.
+- Allocation percentages by sector plus cash.
+- Responsive holdings rows with profit/loss text semantics.
+
+The FPT Position Detail route derives quantity, average cost, market value, daily P&L, unrealized P&L, allocation, filled tax lots, and recent order activity from the same state. Its deterministic performance chart adapts to desktop and mobile layouts.
+
+### 6.8 Orders and Cancel Order
+
+Orders provides All, Open, Filled, Cancelled, and Rejected views, plus desktop search, side, and order-type filters. Selecting an order shows its detail and the actions permitted for the active demo user.
+
+Cancellation rules are enforced both in the UI and in the shared store:
+
+- Viewer cannot cancel orders.
+- Trader can cancel an active order submitted by that trader.
+- Admin can cancel any active mock order.
+- `PENDING`, `OPEN`, and `PARTIAL` orders are cancellable.
+- `FILLED`, `CANCELLED`, and `REJECTED` orders are terminal and cannot be cancelled.
+- Cancelling a buy order restores only its unfilled reserved buying power, exactly once.
+- The shared reusable Dialog presents the authored confirmation and success feedback.
 
 ## 7. Authentication and session model
 
@@ -317,17 +344,19 @@ The mobile user-avatar button submits a server action that deletes the cookie an
 
 ### Currently enforced permissions
 
-The implemented trading slice enforces order-entry permission in two places:
+The implemented trading and order-management slices enforce permission at both interaction and state boundaries:
 
-1. UI/domain validation through `canPlaceOrders()` and `validateOrder()`.
-2. The Zustand store rejects Viewer submissions independently.
+1. UI/domain validation through `canPlaceOrders()`, `validateOrder()`, and `canCancelOrder()`.
+2. The Zustand store independently rejects unauthorized submissions and cancellations.
 
 Current behavior:
 
-- Viewer can browse Dashboard, Market, and FPT detail.
+- Viewer can browse Dashboard, Market, FPT detail, Portfolio, Position Detail, and Orders.
 - Viewer trade buttons are disabled and a read-only message is shown.
 - Trader can submit mock buy and sell orders.
+- Trader can cancel their own active orders, but not terminal or another user's orders.
 - Admin is recognized by the session/domain model and can submit orders.
+- Admin can cancel any active mock order.
 - Admin-specific routes and controls are not implemented.
 
 ## 9. Trading validation and calculations
@@ -373,21 +402,24 @@ The shared demo portfolio is defined in `components/trading/portfolio-store.ts`.
 
 ```text
 Buying power: ₫486,200,000
-FPT quantity: 2,400 shares
-FPT average cost: ₫112,100
-Orders: []
-Next order sequence: 1042
+Cash balance: ₫486,200,000
+Realized P&L: ₫24,514,000
+Positions: FPT, VCB, HPG, MWG, SSI, VNM
+FPT quantity / average cost: 2,400 / ₫112,100
+Orders: deterministic open, partial, pending, filled, and cancelled history
+Next order sequence: 1052
 ```
 
 ### Persistence
 
 - Zustand's `persist` middleware writes to browser local storage.
 - Storage key: `finops-demo-portfolio`.
-- Store version: `1`.
+- Store version: `2`, with migration support for the previous order shape.
 - State is local to the browser profile/device.
 - State is not connected to the HTTP-only session identity.
 - Clearing browser storage resets persisted portfolio/order state.
 - The store exposes a `reset()` action for deterministic development/testing workflows.
+- A non-browser in-memory storage fallback keeps unit tests deterministic without local-storage warnings.
 
 ### Submitted order shape
 
@@ -397,14 +429,26 @@ Each order contains:
 - Buy or sell side.
 - Quantity.
 - Limit price.
-- `LIMIT` order type.
+- `LIMIT` or seeded `STOP` order type.
 - Deterministic order ID.
-- `OPEN` status.
+- `PENDING`, `OPEN`, `PARTIAL`, `FILLED`, `CANCELLED`, or `REJECTED` status.
+- Filled quantity and reserved buying power.
 - Deterministic submitted time.
 - Actor name.
 - Full calculated estimate.
 
-Order IDs begin with `MOCK-20260714-1042` and increment locally.
+Newly submitted order IDs begin with `MOCK-20260714-1052` and increment locally. Seeded orders use earlier stable IDs so the authored order-history states are available immediately.
+
+### Portfolio calculations
+
+`lib/portfolio.ts` contains explicit, testable calculations for position market value, cost basis, unrealized P&L, daily P&L, portfolio NAV, total return, and allocation. No displayed portfolio percentage is hardcoded; changing or filling positions recomputes the result from shared state.
+
+### Order lifecycle actions
+
+- `submitOrder()` creates an open order and reserves buy-side buying power.
+- `fillOrder()` supports partial and full deterministic fills and updates cash, positions, buying power, and realized P&L.
+- `cancelOrder()` checks role, ownership, active status, and restores an eligible buy reservation once.
+- Every action guards against repeated transitions from a terminal state.
 
 ## 11. Deterministic mock data
 
@@ -525,7 +569,18 @@ Desktop shell geometry follows the authored 232px sidebar and 72px topbar.
 | `OrderTicket` | Reusable buy/sell drawer and mobile sheet |
 | `OrderConfirmationDialog` | Shared buy/sell review state |
 | `OrderSuccessDialog` | Shared buy/sell success state |
-| `usePortfolioStore` | Persisted buying power, positions, orders, and submission |
+| `usePortfolioStore` | Persisted cash, buying power, positions, order lifecycle, and P&L |
+
+### Portfolio and order components
+
+| Component | Responsibility |
+| --- | --- |
+| `PortfolioOverview` | Calculated portfolio metrics, performance, allocation, and holdings |
+| `AllocationList` | Reusable sector/cash allocation visualization |
+| `PositionDetail` | FPT position metrics, chart, tax lots, and order activity |
+| `PositionPerformanceChart` | Deterministic responsive position chart |
+| `OrdersScreen` | Tabs, filters, responsive order list/table, selection, and actions |
+| `CancelOrderDialog` | Reusable accessible cancel confirmation using the shared Dialog |
 
 ### Component preview
 
@@ -579,6 +634,7 @@ Repeated colors and effects are expressed through variables such as:
 - Right-side 470px trading drawer.
 - Centered 540px confirmation/success dialogs.
 - Full dashboard holdings table.
+- Portfolio analytics, holdings table, and order detail panel.
 
 ### Mobile
 
@@ -590,6 +646,7 @@ Repeated colors and effects are expressed through variables such as:
 - Buy/sell actions fixed within normal content flow above bottom navigation.
 - 390px-wide, 560px-high order bottom sheet at the authored viewport.
 - Mobile-friendly paired quantity and price inputs.
+- Authored Portfolio allocation/holdings cards and Orders card list.
 
 The layout uses `h-dvh` and internal scrolling to avoid allowing the shell itself to exceed the device viewport.
 
@@ -617,8 +674,6 @@ Remaining accessibility work should include automated browser-level audits, mobi
 
 ### Product limitations
 
-- Portfolio overview/detail routes are not implemented.
-- Order history and cancellation are not implemented.
 - Corporate actions are not implemented.
 - Audit logs are not implemented.
 - User management is not implemented.
@@ -627,11 +682,9 @@ Remaining accessibility work should include automated browser-level audits, mobi
 - Admin has no visible login action or admin workspace.
 - Only FPT has a stock-detail route and trading flow.
 - Only LIMIT orders are supported.
-- There is no order matching, partial fill, fill, cancellation, or rejection engine.
-- Submitted sell orders do not change the position until a future fill mechanism exists.
-- Submitted buy orders reserve buying power but do not create filled shares.
+- There is no timed exchange simulator or automatic matching engine; partial/full fills are deterministic store actions.
+- Rejection is represented in the domain but no current UI action generates a rejected order.
 - Dashboard metrics do not synchronize with the Zustand trading store.
-- Success buttons currently return to Dashboard or Market because Portfolio and Orders routes do not exist.
 
 ### Data and backend limitations
 
@@ -649,7 +702,7 @@ Remaining accessibility work should include automated browser-level audits, mobi
 ### UI limitations
 
 - Desktop global search is disabled.
-- Several desktop/mobile navigation entries are intentionally disabled placeholders.
+- Corporate Actions, Audit Logs, Users, Settings, and Performance Lab navigation entries remain disabled placeholders.
 - Marketing navigation labels are not complete product links.
 - Desktop logout is missing.
 - `/dev/components` is not gated to development mode.
@@ -680,7 +733,7 @@ pnpm build
 
 ### Current automated tests
 
-The test suite contains 15 passing tests covering:
+The test suite contains 21 passing tests covering:
 
 - Tailwind class merging.
 - All Button size/style/state combinations.
@@ -698,6 +751,11 @@ The test suite contains 15 passing tests covering:
 - Buying-power validation.
 - Sell-position validation.
 - Sell proceeds, remaining position, and realized P&L.
+- Exact position, portfolio NAV, total-return, and allocation calculations.
+- Submitted orders appearing in shared order state.
+- Buy and sell fill effects on cash, buying power, positions, and realized P&L.
+- Cancellation permission for Viewer, Trader ownership, and Admin.
+- Terminal-state protection and one-time buy-reservation refunds.
 
 Tests use Node's built-in test runner through `tsx`. Component tests render React components to static markup; there is not yet a browser-based end-to-end test suite.
 
@@ -707,7 +765,7 @@ As of 2026-07-15:
 
 - ESLint: passing.
 - Strict TypeScript check: passing.
-- Tests: 15/15 passing.
+- Tests: 21/21 passing.
 - Production build: passing.
 - `git diff --check`: passing.
 - Desktop and mobile Figma screenshot comparison: completed for implemented flows.
@@ -779,6 +837,8 @@ finops/
 │   ├── dev/components/         Shared component preview
 │   ├── login/                  Login page and server actions
 │   ├── market/                 Market and dynamic FPT detail routes
+│   ├── orders/                 Order history and cancellation route
+│   ├── portfolio/              Portfolio overview and position detail routes
 │   ├── globals.css             Tokens, themes, typography, global styles
 │   ├── layout.tsx              Root metadata, fonts, default dark theme
 │   └── page.tsx                Marketing landing page
@@ -786,6 +846,8 @@ finops/
 │   ├── dashboard/              Equity visualization
 │   ├── login/                  Interactive login form
 │   ├── market/                 Realtime TanStack market table
+│   ├── orders/                 Order list, filters, detail, and cancel dialog
+│   ├── portfolio/              Portfolio analytics and position components
 │   ├── shell/                  Desktop and mobile application shell
 │   ├── trading/                FPT detail, tickets, dialogs, store, charts
 │   ├── ui/                     Reusable design-system components and tests
@@ -794,6 +856,7 @@ finops/
 ├── lib/
 │   ├── market-data.ts          5,000 deterministic instruments and order book
 │   ├── mock-data.ts            Dashboard fixtures
+│   ├── portfolio.ts            Position, NAV, return, and allocation calculations
 │   ├── session.ts              Demo users and HTTP-only cookie helpers
 │   ├── trading.ts              Order schema, permission, estimates, validation
 │   ├── utils.ts                Shared class utility
@@ -830,16 +893,15 @@ Project-specific rules from `AGENTS.md` include:
 
 The most coherent continuation is:
 
-1. Build Portfolio and Orders so trading success actions have real destinations.
-2. Connect Dashboard metrics, positions, and open orders to a shared deterministic domain store.
-3. Add order lifecycle behavior: pending/open/partial/filled/cancelled/rejected.
-4. Introduce deterministic mock Route Handlers for session, market, portfolio, and orders.
-5. Add browser-level tests for login, Viewer denial, Trader buy, Trader sell, and persistence.
-6. Implement corporate actions.
-7. Implement Admin authentication choice, audit logs, user management, and settings.
-8. Implement Performance Lab with TanStack Virtual and the 5,000-row benchmark.
-9. Wire product states: loading, empty, disconnected, market closed, API error, permission denied, session expired, and not found.
-10. Replace or extend custom SVG financial charts with Recharts where interaction is required.
+1. Connect Dashboard metrics and open-order counts to the shared deterministic portfolio store.
+2. Add a deterministic timed matching simulator if interactive fills are needed beyond seeded/tested lifecycle actions.
+3. Introduce deterministic mock Route Handlers for session, market, portfolio, and orders.
+4. Add browser-level tests for login, Viewer denial, Trader buy/sell, cancellation, fills, and persistence.
+5. Implement corporate actions.
+6. Implement Admin authentication choice, audit logs, user management, and settings.
+7. Implement Performance Lab with TanStack Virtual and the 5,000-row benchmark.
+8. Wire product states: loading, empty, disconnected, market closed, API error, permission denied, session expired, and not found.
+9. Replace or extend custom SVG financial charts with Recharts where interaction is required.
 
 Each phase should follow the established workflow:
 
@@ -863,4 +925,3 @@ Inspect Figma
 - Mock data must be repeatable so tests and screenshots stay stable.
 - Accessibility is a product requirement, not a finishing pass.
 - New areas should be delivered as reviewable vertical slices rather than one large unreviewed application build.
-

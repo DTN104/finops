@@ -7,8 +7,8 @@ import type { DemoUser } from "@/lib/session";
 const navItems = [
   { label: "Dashboard", section: "dashboard", href: "/dashboard" },
   { label: "Market", section: "market", href: "/market" },
-  { label: "Portfolio" },
-  { label: "Orders" },
+  { label: "Portfolio", section: "portfolio", href: "/portfolio" },
+  { label: "Orders", section: "orders", href: "/orders" },
   { label: "Corporate Actions" },
   { label: "Audit Logs" },
   { label: "Performance Lab" },

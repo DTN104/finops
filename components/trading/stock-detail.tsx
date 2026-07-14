@@ -128,8 +128,8 @@ export function StockDetail({ role, actor }: { role: DemoRole; actor: string }) 
       <OrderSuccessDialog
         order={submitted}
         open={stage === "success"}
-        onPrimary={() => router.push("/dashboard")}
-        onSecondary={() => router.push(side === "buy" ? "/market" : "/dashboard")}
+        onPrimary={() => router.push(side === "buy" ? "/portfolio" : "/orders")}
+        onSecondary={() => router.push(side === "buy" ? "/market" : "/portfolio")}
       />
     </>
   );

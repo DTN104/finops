@@ -10,8 +10,8 @@ const items = [
   { label: "Home", icon: Home, section: "dashboard", href: "/dashboard" },
   { label: "Market", icon: LineChart, section: "market", href: "/market" },
   { label: "Trade", icon: Plus },
-  { label: "Portfolio", icon: PanelTop },
-  { label: "Orders", icon: List },
+  { label: "Portfolio", icon: PanelTop, section: "portfolio", href: "/portfolio" },
+  { label: "Orders", icon: List, section: "orders", href: "/orders" },
 ] as const;
 
 export function MobileHeader({ user }: { user: DemoUser }) {

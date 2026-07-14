@@ -4,6 +4,8 @@ import type { DemoRole } from "@/lib/session";
 
 export const orderSideSchema = z.enum(["buy", "sell"]);
 export type OrderSide = z.infer<typeof orderSideSchema>;
+export type OrderStatus = "PENDING" | "OPEN" | "PARTIAL" | "FILLED" | "CANCELLED" | "REJECTED";
+export type OrderType = "LIMIT" | "STOP";
 
 export const orderDraftSchema = z.object({
   symbol: z.literal("FPT"),
@@ -37,9 +39,17 @@ export interface ValidationIssue {
   message: string;
 }
 
-export interface MockOrder extends OrderDraft {
+export interface MockOrder {
+  symbol: string;
+  side: OrderSide;
+  quantity: number;
+  limitPrice: number;
+  orderType: OrderType;
   id: string;
-  status: "OPEN";
+  status: OrderStatus;
+  filledQuantity: number;
+  reservedBuyingPower: number;
+  submittedDate: string;
   submittedAt: string;
   actor: string;
   estimate: OrderEstimate;
@@ -47,6 +57,15 @@ export interface MockOrder extends OrderDraft {
 
 export function canPlaceOrders(role: DemoRole): boolean {
   return role === "trader" || role === "admin";
+}
+
+export function isOrderActive(order: Pick<MockOrder, "status">): boolean {
+  return order.status === "PENDING" || order.status === "OPEN" || order.status === "PARTIAL";
+}
+
+export function canCancelOrder(order: Pick<MockOrder, "status" | "actor">, role: DemoRole, actor: string): boolean {
+  if (!isOrderActive(order)) return false;
+  return role === "admin" || (role === "trader" && order.actor === actor);
 }
 
 export function estimateOrder(draft: Pick<OrderDraft, "side" | "quantity" | "limitPrice">, context: Pick<OrderContext, "buyingPower" | "positionQuantity" | "averageCost">): OrderEstimate {
