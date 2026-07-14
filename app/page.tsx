@@ -1,65 +1,99 @@
-import Image from "next/image";
+import { Brand } from "@/components/brand";
+import { EquityBars } from "@/components/dashboard/equity-bars";
+import { ActionLink } from "@/components/ui/action-link";
+import { dashboardData } from "@/lib/mock-data";
 
-export default function Home() {
+const previewMetrics = [
+  { label: "Net value", value: "₫1.284B", detail: "+2.79%", tone: "profit" },
+  { label: "Buying power", value: "₫486.2M", detail: "37.8% free", tone: "muted" },
+  { label: "Open orders", value: "12", detail: "4 pending", tone: "warning" },
+] as const;
+
+export default function LandingPage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-canvas">
+      <header className="flex h-[72px] items-center justify-between border-b border-border-default px-6 lg:h-[88px] lg:px-12">
+        <Brand markSize="small" />
+        <div className="flex items-center gap-7">
+          <nav aria-label="Marketing" className="hidden items-center gap-7 text-secondary lg:flex">
+            <span>Product</span>
+            <span>Architecture</span>
+            <span>Performance Lab</span>
+          </nav>
+          <ActionLink href="/login" variant="secondary" size="medium" className="w-[112px] lg:w-[148px]">
+            Sign in
+          </ActionLink>
+        </div>
+      </header>
+
+      <section className="mx-auto flex max-w-[1440px] flex-col gap-10 px-6 py-12 lg:h-[760px] lg:flex-row lg:items-center lg:gap-14 lg:px-12 lg:pt-16 lg:pb-10">
+        <div className="flex flex-1 flex-col items-start gap-6 lg:h-[600px] lg:max-w-[610px]">
+          <p className="type-label-m rounded-[var(--radius-sm)] bg-profit-bg px-[10px] py-[7px] text-profit">
+            PAPER TRADING • ZERO REAL MONEY
           </p>
+          <h1 className="text-[40px] leading-[48px] font-bold text-primary lg:text-[56px] lg:leading-[64px]">
+            A portfolio project that trades like a real desk.
+          </h1>
+          <p className="type-body-l max-w-[570px] text-secondary">
+            Explore realtime market tables, buy and sell flows, portfolio analytics,
+            corporate actions, audit logs, role-based access and a 5,000-row
+            performance lab—all powered by deterministic mock APIs.
+          </p>
+          <div className="flex w-full flex-col gap-3 sm:flex-row">
+            <ActionLink href="/login" size="large" className="sm:w-[148px]">
+              Start as Demo Trader
+            </ActionLink>
+            <ActionLink href="#architecture" variant="secondary" size="large" className="sm:w-[148px]">
+              View architecture
+            </ActionLink>
+          </div>
+          <div className="flex flex-wrap gap-[10px]">
+            {["Mock market API", "Role-based access", "Auditable trade flow"].map((feature) => (
+              <span key={feature} className="type-body-s rounded-full border border-border-default bg-surface px-3 py-[7px] text-secondary">
+                {feature}
+              </span>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="w-full rounded-[20px] border border-border-default bg-surface-raised p-5 lg:h-[610px] lg:w-[650px] lg:p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="type-heading-h3">Portfolio overview</h2>
+            <span className="type-data-s text-profit">LIVE&nbsp;&nbsp;09:42:18</span>
+          </div>
+          <div className="mt-[18px] grid grid-cols-1 gap-[10px] sm:grid-cols-3">
+            {previewMetrics.map((metric) => (
+              <div key={metric.label} className="rounded-[var(--radius-md)] border border-border-default bg-surface p-[14px]">
+                <p className="type-body-s text-muted">{metric.label}</p>
+                <p className="type-data-m mt-2">{metric.value}</p>
+                <p className={`type-data-s mt-2 ${metric.tone === "profit" ? "text-profit" : metric.tone === "warning" ? "text-warning" : "text-muted"}`}>
+                  {metric.detail}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-[18px] rounded-[14px] border border-border-default bg-canvas p-4">
+            <p className="type-body-s text-secondary">30-day equity curve</p>
+            <EquityBars className="mt-[14px] h-[160px]" count={20} chartWidth={560} start={0} blueCount={6} />
+          </div>
+          <div className="mt-[6px]">
+            {dashboardData.watchlist.slice(0, 3).map((quote) => (
+              <div key={quote.symbol} className="grid grid-cols-3 border-t border-border-default py-3 type-data-s">
+                <span className="font-medium text-primary">{quote.symbol}</span>
+                <span className="text-center text-secondary">{quote.price}</span>
+                <span className={`text-right ${quote.direction === "up" ? "text-profit" : "text-loss"}`}>
+                  <span className="sr-only">{quote.direction === "up" ? "Gain" : "Loss"}: </span>{quote.change}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <footer id="architecture" className="flex min-h-[176px] flex-col justify-center gap-4 bg-surface px-6 text-secondary lg:flex-row lg:items-center lg:justify-between lg:px-12">
+        <p>Built to demonstrate frontend architecture, rendering performance and product thinking.</p>
+        <p className="type-data-s text-muted">NEXT.JS&nbsp;&nbsp;•&nbsp;&nbsp;TYPESCRIPT&nbsp;&nbsp;•&nbsp;&nbsp;MOCK APIs</p>
+      </footer>
+    </main>
   );
 }
