@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
 import type { DemoUser } from "@/lib/session";
 
-export type WorkspaceSection = "dashboard" | "market" | "portfolio" | "orders" | "corporate-actions" | "audit-logs" | "users" | "settings";
+export type WorkspaceSection = "dashboard" | "market" | "portfolio" | "orders" | "corporate-actions" | "audit-logs" | "users" | "settings" | "performance-lab";
 
 export function AppShell({ user, children, current = "dashboard" }: { user: DemoUser; children: ReactNode; current?: WorkspaceSection }) {
   return (

@@ -8,10 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test components/ui/components.test.tsx components/operations/operations-store.test.ts components/trading/portfolio-store.test.ts lib/mock-data.test.ts lib/portfolio.test.ts lib/session.test.ts lib/trading.test.ts"
+    "test": "tsx --test components/ui/components.test.tsx components/operations/operations-store.test.ts components/trading/portfolio-store.test.ts lib/mock-data.test.ts lib/performance-lab.test.ts lib/portfolio.test.ts lib/session.test.ts lib/trading.test.ts"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.14.6",
     "clsx": "^2.1.1",
     "lucide-react": "^1.24.0",
     "next": "16.2.10",
