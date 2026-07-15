@@ -55,6 +55,9 @@ export function LoginForm({ action }: LoginFormProps) {
       <button name="role" value="viewer" className="type-label-l h-12 rounded-[var(--radius-sm)] border border-border-default bg-surface-raised text-primary transition-colors hover:border-border-strong hover:bg-surface-subtle focus-visible:outline-none focus-visible:shadow-[var(--focus-accent)]">
         Continue as Viewer
       </button>
+      <button name="role" value="admin" className="type-label-l h-12 rounded-[var(--radius-sm)] border border-border-default bg-surface-raised text-primary transition-colors hover:border-border-strong hover:bg-surface-subtle focus-visible:outline-none focus-visible:shadow-[var(--focus-accent)]">
+        Continue as Admin
+      </button>
       <p className="type-body-s mt-1 hidden text-muted lg:mt-0 lg:block">Credentials are prefilled for portfolio review.</p>
       <p className="type-body-s mt-0 text-muted lg:hidden">All funds, orders and prices are fictional.</p>
     </form>

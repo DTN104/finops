@@ -45,3 +45,7 @@ export async function deleteDemoSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE);
 }
+
+export function canManageOperations(role: DemoRole): boolean {
+  return role === "admin";
+}

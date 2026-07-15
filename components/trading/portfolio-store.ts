@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 
+import { appendAuditLog } from "@/components/operations/audit-store";
 import { initialPositions, type PortfolioPosition } from "@/lib/portfolio";
 import type { DemoRole } from "@/lib/session";
 import { canCancelOrder, estimateOrder, isOrderActive, validateOrder, type MockOrder, type OrderDraft, type OrderSide, type OrderStatus, type OrderType } from "@/lib/trading";
@@ -114,6 +115,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           averageCost: position.averageCost,
         });
         if (!validation.success) {
+          appendAuditLog({ actor, action: "ORDER_CREATE", module: "Trading", resource: draft.symbol, origin: "Paper trading", outcome: "DENIED", summary: validation.issues[0]?.message ?? "Order validation failed" });
           throw new Error(validation.issues[0]?.message ?? "Order validation failed");
         }
 
@@ -134,16 +136,23 @@ export const usePortfolioStore = create<PortfolioState>()(
           orders: [order, ...state.orders],
           nextOrderNumber: state.nextOrderNumber + 1,
         });
+        appendAuditLog({ actor, action: "ORDER_CREATE", module: "Trading", resource: order.id, origin: "Paper trading", outcome: "SUCCESS", summary: `Created ${order.symbol} ${order.side} order` });
         return order;
       },
       fillOrder: (orderId, requestedQuantity) => {
         const state = get();
         const order = state.orders.find((candidate) => candidate.id === orderId);
-        if (!order || !isOrderActive(order)) return false;
+        if (!order || !isOrderActive(order)) {
+          appendAuditLog({ actor: "System Feed", action: "ORDER_FILL", module: "Trading", resource: orderId, origin: "Mock matching engine", outcome: "DENIED", summary: "Order is missing or inactive" });
+          return false;
+        }
 
         const unfilledQuantity = order.quantity - order.filledQuantity;
         const fillQuantity = requestedQuantity ?? unfilledQuantity;
-        if (!Number.isInteger(fillQuantity) || fillQuantity <= 0 || fillQuantity > unfilledQuantity) return false;
+        if (!Number.isInteger(fillQuantity) || fillQuantity <= 0 || fillQuantity > unfilledQuantity) {
+          appendAuditLog({ actor: "System Feed", action: "ORDER_FILL", module: "Trading", resource: orderId, origin: "Mock matching engine", outcome: "DENIED", summary: "Invalid fill quantity" });
+          return false;
+        }
 
         const position = state.positions[order.symbol] ?? {
           symbol: order.symbol,
@@ -154,7 +163,10 @@ export const usePortfolioStore = create<PortfolioState>()(
           last: order.limitPrice,
           previousClose: order.limitPrice,
         };
-        if (order.side === "sell" && fillQuantity > position.quantity) return false;
+        if (order.side === "sell" && fillQuantity > position.quantity) {
+          appendAuditLog({ actor: "System Feed", action: "ORDER_FILL", module: "Trading", resource: orderId, origin: "Mock matching engine", outcome: "DENIED", summary: "Fill exceeds available position" });
+          return false;
+        }
 
         const fee = Math.round(order.estimate.fee * (fillQuantity / order.quantity));
         const gross = fillQuantity * order.limitPrice;
@@ -193,17 +205,22 @@ export const usePortfolioStore = create<PortfolioState>()(
           positions: { ...state.positions, [order.symbol]: nextPosition },
           orders: updateOrder(state.orders, orderId, (candidate) => ({ ...candidate, status, filledQuantity, reservedBuyingPower })),
         });
+        appendAuditLog({ actor: "System Feed", action: "ORDER_FILL", module: "Trading", resource: orderId, origin: "Mock matching engine", outcome: "SUCCESS", summary: `Filled ${fillQuantity} ${order.symbol} shares` });
         return true;
       },
       cancelOrder: (orderId, role, actor) => {
         const state = get();
         const order = state.orders.find((candidate) => candidate.id === orderId);
-        if (!order || !canCancelOrder(order, role, actor)) return false;
+        if (!order || !canCancelOrder(order, role, actor)) {
+          appendAuditLog({ actor, action: "ORDER_CANCEL", module: "Trading", resource: orderId, origin: "Paper trading", outcome: "DENIED", summary: "Order cannot be cancelled by this identity" });
+          return false;
+        }
 
         set({
           buyingPower: state.buyingPower + (order.side === "buy" ? order.reservedBuyingPower : 0),
           orders: updateOrder(state.orders, orderId, (candidate) => ({ ...candidate, status: "CANCELLED", reservedBuyingPower: 0 })),
         });
+        appendAuditLog({ actor, action: "ORDER_CANCEL", module: "Trading", resource: orderId, origin: "Paper trading", outcome: "SUCCESS", summary: `Cancelled ${order.symbol} ${order.side} order` });
         return true;
       },
       reset: () => set(initialPortfolioData),

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test components/ui/components.test.tsx components/trading/portfolio-store.test.ts lib/mock-data.test.ts lib/portfolio.test.ts lib/session.test.ts lib/trading.test.ts"
+    "test": "tsx --test components/ui/components.test.tsx components/operations/operations-store.test.ts components/trading/portfolio-store.test.ts lib/mock-data.test.ts lib/portfolio.test.ts lib/session.test.ts lib/trading.test.ts"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",

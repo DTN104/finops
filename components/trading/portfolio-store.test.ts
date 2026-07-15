@@ -2,11 +2,15 @@ import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
 
 import { usePortfolioStore } from "@/components/trading/portfolio-store";
+import { useAuditStore } from "@/components/operations/audit-store";
 
 const buyDraft = { symbol: "FPT", side: "buy", quantity: 100, limitPrice: 126_400, orderType: "LIMIT" } as const;
 const sellDraft = { symbol: "FPT", side: "sell", quantity: 100, limitPrice: 126_300, orderType: "LIMIT" } as const;
 
-afterEach(() => usePortfolioStore.getState().reset());
+afterEach(() => {
+  usePortfolioStore.getState().reset();
+  useAuditStore.getState().reset();
+});
 
 test("submitted orders are added to shared state and a buy fill updates the portfolio", () => {
   usePortfolioStore.getState().reset();
@@ -27,6 +31,7 @@ test("submitted orders are added to shared state and a buy fill updates the port
   assert.ok(filled.cashBalance < before.cashBalance);
   assert.equal(filled.fillOrder(order.id), false);
   assert.equal(filled.cancelOrder(order.id, "trader", "Alex Morgan"), false);
+  assert.deepEqual(useAuditStore.getState().logs.slice(0, 4).map((log) => log.action), ["ORDER_CANCEL", "ORDER_FILL", "ORDER_FILL", "ORDER_CREATE"]);
 });
 
 test("cancelling an open buy refunds reserved buying power exactly once", () => {

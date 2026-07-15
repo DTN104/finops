@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getDemoUser } from "@/lib/session";
+import { canManageOperations, getDemoUser } from "@/lib/session";
 
 test("demo roles resolve to distinct deterministic users", () => {
   const trader = getDemoUser("trader");
@@ -15,4 +15,10 @@ test("demo roles resolve to distinct deterministic users", () => {
   assert.equal(admin?.name, "Sam Rivera");
   assert.equal(admin?.roleLabel, "Demo Admin");
   assert.equal(getDemoUser("owner"), null);
+});
+
+test("only Admin can manage operational data", () => {
+  assert.equal(canManageOperations("viewer"), false);
+  assert.equal(canManageOperations("trader"), false);
+  assert.equal(canManageOperations("admin"), true);
 });

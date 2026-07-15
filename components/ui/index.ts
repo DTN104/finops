@@ -1,6 +1,7 @@
 export * from "./button";
 export * from "./data-table";
 export * from "./dialog";
+export * from "./drawer";
 export * from "./empty-state";
 export * from "./error-state";
 export * from "./form-field";
