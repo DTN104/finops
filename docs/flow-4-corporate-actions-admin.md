@@ -67,22 +67,23 @@ Mỗi bản ghi audit có các thông tin chính:
 - Before/after khi thao tác có thay đổi dữ liệu.
 - Integrity fingerprint hiển thị trong Audit Detail Drawer.
 
-Audit store là append-only ở luồng giao diện; dữ liệu demo được persist bằng localStorage.
+Audit logs được ghi vào PostgreSQL trong cùng transaction với business mutation. Giao diện chỉ đọc log qua Server Component.
 
 ## 5. Thay đổi kỹ thuật
 
 ### Corporate Actions và Admin
 
-- `components/operations/operations-store.ts`
-  - Zustand store cho corporate actions, users và workspace settings.
-  - Zod validation cho form và thứ tự các mốc ngày.
-  - Tự động tạo audit log khi create, update, publish, đổi role và lưu settings.
+- `src/services/operations.service.ts`
+  - Zod validation, RBAC và Drizzle transactions cho corporate actions, users và settings.
+  - Tạo audit log khi create, update, publish, đổi role và lưu settings.
+- `src/repositories/*`
+  - PostgreSQL access cho corporate actions, users, settings và audit logs.
 - `components/operations/corporate-actions-screen.tsx`
   - List, detail, create/edit form và review/publish flow.
 - `components/operations/admin-screens.tsx`
   - Audit Logs, Audit Detail Drawer, User Management, Edit Role và Settings.
-- `components/operations/audit-store.ts`
-  - Audit store với seeded data, ID và timestamp deterministic.
+- `app/actions/operations.ts`
+  - Server Actions cho create/update/publish corporate action, đổi role và settings.
 
 ### Shared UI và shell
 
@@ -100,17 +101,16 @@ Audit store là append-only ở luồng giao diện; dữ liệu demo được p
 ### RBAC và audit order
 
 - `lib/session.ts`
-  - Bổ sung quyền quản trị operations cho Admin.
-- `components/trading/portfolio-store.ts`
+  - Session cookie trỏ tới user UUID trong PostgreSQL và quyền quản trị chỉ dành cho Admin.
+- `src/services/trading.service.ts`
   - Ghi audit cho create, fill và cancel order, gồm cả success và denied.
 
 ### Tests
 
-- `components/operations/operations-store.test.ts`
-  - Kiểm tra audit khi create/publish corporate action, đổi role và lưu settings.
-  - Kiểm tra validation cho chuỗi ngày không hợp lệ.
-- `components/trading/portfolio-store.test.ts`
-  - Kiểm tra audit sequence cho order actions.
+- `src/services/validation.test.ts`
+  - Kiểm tra Zod validation cho orders, corporate action dates và settings.
+- PostgreSQL integration smoke test
+  - Kiểm tra place/fill/cancel, publish và role change cùng audit records.
 - `lib/session.test.ts`
   - Kiểm tra chỉ Admin có quyền quản lý operations.
 
@@ -118,7 +118,7 @@ Audit store là append-only ở luồng giao diện; dữ liệu demo được p
 
 | Kiểm tra | Kết quả |
 | --- | --- |
-| `npm test` | Pass — 24/24 tests |
+| `npm test` | Pass — 22/22 tests |
 | `npm run lint` | Pass |
 | `npm run typecheck` | Pass |
 | `npm run build` | Pass |
@@ -135,8 +135,7 @@ Các frame Figma đã dùng để đối chiếu:
 
 ## 7. Giới hạn hiện tại
 
-- Dữ liệu, authentication và API đều là mock deterministic; chưa có backend/database thật.
-- State của Flow 4 và audit logs được lưu bằng localStorage.
+- Dữ liệu business, demo identities và audit đã được lưu trong PostgreSQL; market feed vẫn là deterministic mock.
 - User creation và disable/enable user chưa nằm trong subflow đã triển khai; các nút tương ứng đang disabled.
 - Integrity fingerprint trong Audit Detail là dữ liệu mô phỏng, chưa phải chữ ký hoặc kiểm chứng cryptographic.
 - Các settings được lưu và audit nhưng table density/quote cadence chưa được nối vào toàn bộ module hiện có.

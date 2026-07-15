@@ -1,23 +1,16 @@
-"use client";
-
 import Link from "next/link";
-import { useMemo } from "react";
 
 import { PositionPerformanceChart } from "@/components/portfolio/position-performance-chart";
-import { usePortfolioStore } from "@/components/trading/portfolio-store";
 import { calculatePortfolio, calculatePosition, formatCompactVnd, formatSignedPercent } from "@/lib/portfolio";
+import type { PortfolioSnapshot } from "@/src/services/query.service";
 
-export function PositionDetail({ symbol }: { symbol: string }) {
-  const positions = usePortfolioStore((state) => state.positions);
-  const cashBalance = usePortfolioStore((state) => state.cashBalance);
-  const realizedPnl = usePortfolioStore((state) => state.realizedPnl);
-  const orders = usePortfolioStore((state) => state.orders);
-  const portfolio = useMemo(() => calculatePortfolio(positions, cashBalance, realizedPnl), [cashBalance, positions, realizedPnl]);
-  const position = positions[symbol];
+export function PositionDetail({ symbol, snapshot }: { symbol: string; snapshot: PortfolioSnapshot }) {
+  const portfolio = calculatePortfolio(snapshot.positions, snapshot.cashBalance, snapshot.realizedPnl);
+  const position = snapshot.positions[symbol];
   if (!position) return null;
 
   const metrics = calculatePosition(position);
-  const lots = orders.filter((order) => order.symbol === symbol && order.side === "buy" && order.status === "FILLED").slice(0, 3);
+  const lots = snapshot.orders.filter((order) => order.symbol === symbol && order.side === "buy" && order.status === "FILLED").slice(0, 3);
 
   return (
     <main className="flex flex-col gap-[14px] p-4 lg:gap-[18px] lg:p-6">

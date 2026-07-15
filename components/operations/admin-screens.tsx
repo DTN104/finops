@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useTransition, type ReactNode } from "react";
 
-import { useAuditStore, type AuditLog } from "@/components/operations/audit-store";
-import { useOperationsStore, type ManagedUser, type WorkspaceSettings } from "@/components/operations/operations-store";
+import { changeUserRoleAction, updateSettingsAction } from "@/app/actions/operations";
 import { Button, DataTable, Dialog, Drawer, EmptyState, MetricCard, StatusBadge, type DataTableColumn } from "@/components/ui";
+import type { AuditLogView, ManagedUser, WorkspaceSettings } from "@/lib/operations";
 import type { DemoRole } from "@/lib/session";
 
 const roleCopy: Record<DemoRole, { label: string; description: string }> = {
@@ -14,13 +14,12 @@ const roleCopy: Record<DemoRole, { label: string; description: string }> = {
   admin: { label: "Admin", description: "Full access including users, settings and issuer events" },
 };
 
-export function AuditLogsScreen() {
-  const logs = useAuditStore((state) => state.logs);
+export function AuditLogsScreen({ logs }: { logs: AuditLogView[] }) {
   const [query, setQuery] = useState("");
   const [module, setModule] = useState("all");
   const [action, setAction] = useState("all");
   const [outcome, setOutcome] = useState("all");
-  const [selectedId, setSelectedId] = useState("AUD-20260714-093451-018");
+  const [selectedId, setSelectedId] = useState(logs[0]?.id ?? "");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const filtered = useMemo(() => logs.filter((log) => {
     const normalized = query.trim().toLowerCase();
@@ -30,7 +29,7 @@ export function AuditLogsScreen() {
       && (outcome === "all" || log.outcome === outcome);
   }), [action, logs, module, outcome, query]);
   const selected = logs.find((log) => log.id === selectedId) ?? filtered[0] ?? null;
-  const columns: readonly DataTableColumn<AuditLog>[] = [
+  const columns: readonly DataTableColumn<AuditLogView>[] = [
     { key: "time", header: "Time", className: "w-[12%] pl-[14px]", cell: (log) => timeOnly(log.timestamp) },
     { key: "actor", header: "Actor", className: "w-[14%] text-primary", cell: (log) => log.actor },
     { key: "action", header: "Action", className: "w-[17%]", cell: (log) => log.action },
@@ -69,13 +68,13 @@ export function AuditLogsScreen() {
   );
 }
 
-export function UserManagementScreen({ actor }: { actor: string }) {
-  const users = useOperationsStore((state) => state.users);
-  const updateUserRole = useOperationsStore((state) => state.updateUserRole);
+export function UserManagementScreen({ initialUsers }: { initialUsers: ManagedUser[] }) {
+  const [users, setUsers] = useState(initialUsers);
+  const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("all");
   const [status, setStatus] = useState("all");
-  const [selectedId, setSelectedId] = useState("user_018");
+  const [selectedId, setSelectedId] = useState(initialUsers[0]?.id ?? "");
   const [dialogOpen, setDialogOpen] = useState(false);
   const selected = users.find((user) => user.id === selectedId) ?? users[0];
   const [nextRole, setNextRole] = useState<DemoRole>(selected?.role ?? "viewer");
@@ -89,9 +88,12 @@ export function UserManagementScreen({ actor }: { actor: string }) {
   const openRoleDialog = (user: ManagedUser) => { setSelectedId(user.id); setNextRole(user.role); setDialogOpen(true); };
   const saveRole = () => {
     if (!selected) return;
-    const changed = updateUserRole(selected.id, nextRole, actor);
-    setAnnouncement(changed ? `${selected.name}'s role changed to ${roleCopy[nextRole].label}` : "Role is unchanged");
-    setDialogOpen(false);
+    startTransition(async () => {
+      const result = await changeUserRoleAction(selected.id, nextRole);
+      if (result.success) setUsers((current) => current.map((user) => user.id === selected.id ? { ...user, role: nextRole } : user));
+      setAnnouncement(result.success ? `${selected.name}'s role changed to ${roleCopy[nextRole].label}` : result.error);
+      setDialogOpen(false);
+    });
   };
   const columns: readonly DataTableColumn<ManagedUser>[] = [
     { key: "name", header: "Name", className: "w-[18%] pl-[14px] text-primary", cell: (user) => user.name },
@@ -113,24 +115,27 @@ export function UserManagementScreen({ actor }: { actor: string }) {
       <section className="mt-[14px] grid gap-[10px] lg:hidden">{filtered.map((user) => <button key={user.id} type="button" onClick={() => openRoleDialog(user)} className="rounded-[14px] border border-border-default bg-surface p-[14px] text-left"><span className="flex justify-between gap-3"><strong>{user.name}</strong><StatusBadge label={user.role.toUpperCase()} tone={user.role === "admin" ? "warning" : user.role === "trader" ? "info" : "neutral"} className="h-7" /></span><span className="type-body-s mt-2 block text-secondary">{user.email}</span><span className="type-data-s mt-2 block text-muted">{user.lastActive}</span></button>)}</section>
       {selected ? <section className="mt-[18px] flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-border-default bg-surface p-[18px]"><div><p className="type-label-m text-profit">SELECTED USER</p><h2 className="type-heading-h3 mt-1">{selected.name} • {roleCopy[selected.role].label}</h2><p className="type-body-s mt-1 text-secondary">{selected.orders} orders • Last active {selected.lastActive} • MFA disabled</p></div><div className="flex gap-[10px]"><Button size="medium" variant="secondary" onClick={() => openRoleDialog(selected)}>Edit role</Button><Button size="medium" variant="danger" disabled>Disable user</Button></div></section> : null}
       <p aria-live="polite" className="sr-only">{announcement}</p>
-      {selected ? <Dialog open={dialogOpen} onOpenChange={setDialogOpen} title={`Edit ${selected.name}'s role`} className="max-w-[540px] p-6 lg:p-8"><h2 className="type-heading-h2">Edit {selected.name}’s role</h2><p className="mt-3 text-secondary">Role changes take effect immediately and are written to Audit Logs.</p><fieldset className="mt-5 space-y-3"><legend className="sr-only">Role</legend>{(Object.keys(roleCopy) as DemoRole[]).map((candidate) => <label key={candidate} className={`flex cursor-pointer items-start gap-3 rounded-[12px] border p-4 ${nextRole === candidate ? "border-border-focus bg-surface" : "border-border-default"}`}><input type="radio" name="role" value={candidate} checked={nextRole === candidate} onChange={() => setNextRole(candidate)} className="mt-1 accent-[var(--finops-bg-brand)]" /><span><strong>{roleCopy[candidate].label}</strong><span className="type-body-s mt-1 block text-secondary">{roleCopy[candidate].description}</span></span></label>)}</fieldset><Button size="large" onClick={saveRole} className="mt-5 w-full">Save role change</Button><Button size="large" variant="secondary" onClick={() => setDialogOpen(false)} className="mt-3 w-full">Cancel</Button></Dialog> : null}
+      {selected ? <Dialog open={dialogOpen} onOpenChange={setDialogOpen} title={`Edit ${selected.name}'s role`} className="max-w-[540px] p-6 lg:p-8"><h2 className="type-heading-h2">Edit {selected.name}’s role</h2><p className="mt-3 text-secondary">Role changes take effect immediately and are written to Audit Logs.</p><fieldset className="mt-5 space-y-3"><legend className="sr-only">Role</legend>{(Object.keys(roleCopy) as DemoRole[]).map((candidate) => <label key={candidate} className={`flex cursor-pointer items-start gap-3 rounded-[12px] border p-4 ${nextRole === candidate ? "border-border-focus bg-surface" : "border-border-default"}`}><input type="radio" name="role" value={candidate} checked={nextRole === candidate} onChange={() => setNextRole(candidate)} className="mt-1 accent-[var(--finops-bg-brand)]" /><span><strong>{roleCopy[candidate].label}</strong><span className="type-body-s mt-1 block text-secondary">{roleCopy[candidate].description}</span></span></label>)}</fieldset><Button size="large" disabled={pending} onClick={saveRole} className="mt-5 w-full">Save role change</Button><Button size="large" variant="secondary" onClick={() => setDialogOpen(false)} className="mt-3 w-full">Cancel</Button></Dialog> : null}
     </main>
   );
 }
 
-export function SettingsScreen({ actor }: { actor: string }) {
-  const settings = useOperationsStore((state) => state.settings);
-  const updateSettings = useOperationsStore((state) => state.updateSettings);
+export function SettingsScreen({ settings }: { settings: WorkspaceSettings }) {
+  const [pending, startTransition] = useTransition();
   const [draft, setDraft] = useState<WorkspaceSettings | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const formSettings = draft ?? settings;
   const change = <Key extends keyof WorkspaceSettings>(key: Key, value: WorkspaceSettings[Key]) => setDraft((current) => ({ ...(current ?? settings), [key]: value }));
-  const save = () => { updateSettings(formSettings, actor); setDraft(null); setAnnouncement("Workspace settings saved and audit log created"); };
+  const save = () => startTransition(async () => {
+    const result = await updateSettingsAction(formSettings);
+    if (result.success) setDraft(null);
+    setAnnouncement(result.success ? "Workspace settings saved and audit log created" : result.error);
+  });
 
   return (
     <main className="p-4 lg:p-6">
       <AdminMobileNav current="settings" />
-      <PageHeader title="Settings" subtitle="Configure the demo workspace, display and simulated APIs." action={<Button size="medium" onClick={save}>Save changes</Button>} />
+      <PageHeader title="Settings" subtitle="Configure the demo workspace, display and simulated APIs." action={<Button size="medium" disabled={pending} onClick={save}>Save changes</Button>} />
       <div className="mt-[18px] grid gap-[18px] lg:grid-cols-[250px_minmax(0,896px)] lg:gap-[14px]">
         <nav aria-label="Settings sections" className="flex gap-2 overflow-x-auto rounded-[14px] border border-border-default bg-surface p-2 lg:flex-col lg:p-3">{["General", "Profile", "Display", "Realtime data", "Notifications", "Mock APIs"].map((item, index) => <button key={item} type="button" disabled={index > 0} className={`h-10 shrink-0 rounded-[8px] px-3 text-left ${index === 0 ? "bg-surface-raised text-primary" : "text-muted"} disabled:opacity-100`}>{item}</button>)}</nav>
         <section className="rounded-[14px] border border-border-default bg-surface p-4 lg:p-[22px]">
@@ -152,7 +157,7 @@ export function SettingsScreen({ actor }: { actor: string }) {
   );
 }
 
-function AuditDetailDrawer({ log, open, onOpenChange }: { log: AuditLog | null; open: boolean; onOpenChange: (open: boolean) => void }) {
+function AuditDetailDrawer({ log, open, onOpenChange }: { log: AuditLogView | null; open: boolean; onOpenChange: (open: boolean) => void }) {
   if (!log) return null;
   return <Drawer open={open} onOpenChange={onOpenChange} title="Audit event detail"><StatusBadge label={log.outcome} tone={log.outcome === "SUCCESS" ? "success" : "danger"} className="mt-5" /><p className="type-data-s mt-4 text-muted">{log.id}</p><h3 className="type-heading-h3 mt-2">{log.action}</h3><p className="mt-2 text-secondary">{log.summary}</p><dl className="mt-6 grid gap-4 sm:grid-cols-2"><Detail label="Actor" value={log.actor} /><Detail label="Module" value={log.module} /><Detail label="Resource" value={log.resource} /><Detail label="Session / IP" value={log.origin} /><Detail label="Timestamp" value={log.timestamp} /></dl><h3 className="mt-7 font-semibold">Before / after</h3><div className="mt-3 grid gap-3 sm:grid-cols-2"><CodeBlock label="BEFORE" value={log.before ?? "No previous value"} /><CodeBlock label="AFTER" value={log.after ?? log.summary} /></div><p className="type-data-s mt-6 break-all text-muted">integrity_hash: 8c9f…4d71</p></Drawer>;
 }

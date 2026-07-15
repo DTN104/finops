@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type FormEvent, type InputHTMLAttributes } from "react";
+import { useMemo, useState, useTransition, type FormEvent, type InputHTMLAttributes } from "react";
 
-import { corporateActionSchema, useOperationsStore, type CorporateAction, type CorporateActionInput, type CorporateActionStatus } from "@/components/operations/operations-store";
+import { publishCorporateActionAction, saveCorporateActionAction } from "@/app/actions/operations";
 import { Button, DataTable, Dialog, EmptyState, MetricCard, StatusBadge, type DataTableColumn, type StatusBadgeTone } from "@/components/ui";
+import { corporateActionSchema, type CorporateAction, type CorporateActionInput, type CorporateActionStatus } from "@/lib/operations";
 
 const formatter = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
 const formatDate = (value: string) => value ? formatter.format(new Date(`${value}T00:00:00Z`)) : "—";
 const statusTone: Record<CorporateActionStatus, StatusBadgeTone> = { DRAFT: "neutral", ANNOUNCED: "info", UPCOMING: "success", "ACTION NEEDED": "warning" };
 
-export function CorporateActionsList({ canManage }: { canManage: boolean }) {
-  const actions = useOperationsStore((state) => state.actions);
+export function CorporateActionsList({ canManage, actions }: { canManage: boolean; actions: CorporateAction[] }) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
@@ -77,8 +77,7 @@ export function CorporateActionsList({ canManage }: { canManage: boolean }) {
   );
 }
 
-export function CorporateActionDetail({ id, canManage }: { id: string; canManage: boolean }) {
-  const action = useOperationsStore((state) => state.actions.find((candidate) => candidate.id === id && (canManage || candidate.published)));
+export function CorporateActionDetail({ action, canManage }: { action: CorporateAction | null; canManage: boolean }) {
   if (!action) return <main className="p-6"><EmptyState title="Corporate action not found" description="This simulated event does not exist." action={<Link href="/corporate-actions" className="text-profit">Back to Corporate Actions</Link>} /></main>;
   const fpt = action.symbol === "FPT";
 
@@ -123,11 +122,9 @@ export function CorporateActionDetail({ id, canManage }: { id: string; canManage
   );
 }
 
-export function CorporateActionForm({ actor, id }: { actor: string; id?: string }) {
+export function CorporateActionForm({ existing }: { existing?: CorporateAction }) {
   const router = useRouter();
-  const existing = useOperationsStore((state) => id ? state.actions.find((action) => action.id === id) : undefined);
-  const saveAction = useOperationsStore((state) => state.saveAction);
-  const publishAction = useOperationsStore((state) => state.publishAction);
+  const [pending, startTransition] = useTransition();
   const [values, setValues] = useState<CorporateActionInput>(() => existing ?? {
     symbol: "FPT", title: "2026 interim dividend", type: "Cash Dividend", currency: "VND", exDate: "2026-07-22", recordDate: "2026-07-23", paymentDate: "2026-08-08", amountPerShare: 2_000, description: "FPT Corporation will pay a simulated interim cash dividend of ₫2,000 per eligible share.", sourceReference: "MOCK-ISSUER-FPT-0714",
   });
@@ -143,17 +140,24 @@ export function CorporateActionForm({ actor, id }: { actor: string; id?: string 
   const saveDraft = () => {
     const input = validated();
     if (!input) return;
-    const action = saveAction(input, actor, id);
-    router.push(`/corporate-actions/${action.id}`);
+    startTransition(async () => {
+      const result = await saveCorporateActionAction(input, existing?.id);
+      if (result.success) router.push(`/corporate-actions/${result.id}`);
+      else setErrors({ form: result.error });
+    });
   };
   const review = (event: FormEvent) => { event.preventDefault(); if (validated()) setReviewOpen(true); };
   const publish = () => {
     const input = validated();
     if (!input) return;
-    const action = saveAction(input, actor, id);
-    publishAction(action.id, actor);
-    setReviewOpen(false);
-    router.push(`/corporate-actions/${action.id}`);
+    startTransition(async () => {
+      const saved = await saveCorporateActionAction(input, existing?.id);
+      if (!saved.success) { setErrors({ form: saved.error }); return; }
+      const published = await publishCorporateActionAction(saved.id);
+      if (!published.success) { setErrors({ form: published.error }); return; }
+      setReviewOpen(false);
+      router.push(`/corporate-actions/${published.id}`);
+    });
   };
   const set = <Key extends keyof CorporateActionInput>(key: Key, value: CorporateActionInput[Key]) => setValues((current) => ({ ...current, [key]: value }));
 
@@ -162,8 +166,9 @@ export function CorporateActionForm({ actor, id }: { actor: string; id?: string 
       <form onSubmit={review} className="p-4 lg:p-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div><p className="type-label-m text-profit">ADMIN WORKFLOW</p><h1 className="mt-2 text-[24px] leading-8 font-semibold lg:text-[32px] lg:leading-10 lg:font-bold">{existing ? "Edit" : "Create"} corporate action</h1><p className="type-body-s mt-1 text-secondary">Add a simulated issuer event to the FinOps universe.</p></div>
-          <div className="flex gap-[10px]"><Button size="medium" variant="secondary" onClick={saveDraft}>Save draft</Button><Button size="medium" type="submit">Review event</Button></div>
+          <div className="flex gap-[10px]"><Button size="medium" variant="secondary" disabled={pending} onClick={saveDraft}>Save draft</Button><Button size="medium" type="submit" disabled={pending}>Review event</Button></div>
         </header>
+        {errors.form ? <p role="alert" className="type-body-s mt-3 text-loss">{errors.form}</p> : null}
 
         <div className="mt-[18px] grid gap-[18px] lg:grid-cols-[minmax(0,760px)_minmax(320px,386px)] lg:gap-[14px]">
           <section className="rounded-[14px] border border-border-default bg-surface p-4 lg:p-[18px]">
@@ -194,7 +199,7 @@ export function CorporateActionForm({ actor, id }: { actor: string; id?: string 
         <h2 className="mt-3 text-[26px] leading-8 font-bold lg:text-[32px] lg:leading-10">Publish {String(values.symbol)} cash dividend?</h2>
         <p className="mt-3 text-secondary">Publishing makes this event visible to Viewer and Trader roles and creates an audit entry.</p>
         <div className="mt-5 rounded-[14px] border border-border-default bg-surface p-4"><Summary label="Symbol" value={String(values.symbol)} /><Summary label="Type" value={values.type.toUpperCase()} /><Summary label="Ex-right" value={formatDate(String(values.exDate)).toUpperCase()} /><Summary label="Record date" value={formatDate(String(values.recordDate)).toUpperCase()} /><Summary label="Payment date" value={formatDate(String(values.paymentDate)).toUpperCase()} /><Summary label="Net portfolio impact" value="+₫4.56M" profit /></div>
-        <Button size="large" onClick={publish} className="mt-5 w-full">Publish event</Button>
+        <Button size="large" disabled={pending} onClick={publish} className="mt-5 w-full">Publish event</Button>
         <Button size="large" variant="secondary" onClick={() => setReviewOpen(false)} className="mt-3 w-full">Back to edit</Button>
       </Dialog>
     </>

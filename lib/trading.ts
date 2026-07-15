@@ -8,7 +8,7 @@ export type OrderStatus = "PENDING" | "OPEN" | "PARTIAL" | "FILLED" | "CANCELLED
 export type OrderType = "LIMIT" | "STOP";
 
 export const orderDraftSchema = z.object({
-  symbol: z.literal("FPT"),
+  symbol: z.string().trim().regex(/^[A-Z0-9]{1,20}$/, "Symbol must use uppercase letters or numbers"),
   side: orderSideSchema,
   quantity: z.number().int("Quantity must be a whole number").positive("Quantity must be greater than zero").refine((value) => value % 100 === 0, "Quantity must use 100-share lots"),
   limitPrice: z.number().int("Price must be a whole number").positive("Price must be greater than zero").refine((value) => value % 100 === 0, "Price must use ₫100 ticks"),
@@ -108,7 +108,7 @@ export function validateOrder(input: unknown, context: OrderContext): { success:
     issues.push({ code: "buying_power", message: "Estimated total plus fees exceeds buying power" });
   }
   if (parsed.data.side === "sell" && parsed.data.quantity > context.positionQuantity) {
-    issues.push({ code: "position", message: "Quantity exceeds the available FPT position" });
+    issues.push({ code: "position", message: `Quantity exceeds the available ${parsed.data.symbol} position` });
   }
 
   return issues.length ? { success: false, issues } : { success: true, draft: parsed.data, estimate };

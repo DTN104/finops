@@ -4,8 +4,19 @@ import Link from "next/link";
 import { EquityBars } from "@/components/dashboard/equity-bars";
 import { AppShell } from "@/components/shell/app-shell";
 import { DataTable, type DataTableColumn } from "@/components/ui";
-import { dashboardData, type Holding } from "@/lib/mock-data";
+import { formatMarketPrice, formatPercent, marketInstruments } from "@/lib/market-data";
+import { calculatePortfolio, formatCompactVnd, formatSignedPercent } from "@/lib/portfolio";
 import { getDemoSession } from "@/lib/session";
+import { getPortfolioSnapshot } from "@/src/services/query.service";
+
+interface Holding {
+  symbol: string;
+  quantity: string;
+  last: string;
+  value: string;
+  return: string;
+  direction: "up" | "down";
+}
 
 const holdingColumns: readonly DataTableColumn<Holding>[] = [
   { key: "symbol", header: "Symbol", className: "w-[15%] text-primary", cell: (row) => row.symbol },
@@ -18,6 +29,29 @@ const holdingColumns: readonly DataTableColumn<Holding>[] = [
 export default async function DashboardPage() {
   const user = await getDemoSession();
   if (!user) redirect("/login");
+  const snapshot = await getPortfolioSnapshot(user.id, user.name);
+  if (!snapshot) redirect("/login");
+  const portfolio = calculatePortfolio(snapshot.positions, snapshot.cashBalance, snapshot.realizedPnl);
+  const dayPnl = portfolio.positions.reduce((total, position) => total + position.dayPnl, 0);
+  const openOrders = snapshot.orders.filter((order) => order.status === "OPEN" || order.status === "PARTIAL" || order.status === "PENDING");
+  const holdings: Holding[] = portfolio.positions.slice().sort((left, right) => right.marketValue - left.marketValue).slice(0, 4).map((position) => ({
+    symbol: position.symbol,
+    quantity: position.quantity.toLocaleString("en-US"),
+    last: formatCompactVnd(position.last),
+    value: formatCompactVnd(position.marketValue),
+    return: formatSignedPercent(position.unrealizedPercent),
+    direction: position.unrealizedPnl >= 0 ? "up" : "down",
+  }));
+  const metrics = [
+    { label: "Buying power", value: formatCompactVnd(snapshot.buyingPower), supporting: `${(snapshot.buyingPower / Math.max(1, portfolio.netAssetValue) * 100).toFixed(1)}% available`, trend: "neutral" },
+    { label: "Day P&L", value: formatCompactVnd(dayPnl, true), supporting: `${formatSignedPercent(dayPnl / Math.max(1, portfolio.netAssetValue) * 100, 2)} today`, trend: dayPnl >= 0 ? "positive" : "negative" },
+  ];
+  const watchlist = marketInstruments.slice(0, 5).map((instrument) => ({
+    symbol: instrument.symbol,
+    price: formatMarketPrice(instrument.last),
+    change: formatPercent(instrument.changePercent),
+    direction: instrument.changePercent >= 0 ? "up" : "down",
+  }));
 
   return (
     <AppShell user={user}>
@@ -26,7 +60,7 @@ export default async function DashboardPage() {
           <div>
             <p className="type-body-s text-secondary lg:hidden">Good morning, {user.name.split(" ")[0]}</p>
             <h1 className="text-[24px] leading-8 font-semibold lg:text-[32px] lg:leading-10 lg:font-bold">Portfolio overview</h1>
-            <p className="type-body-s hidden text-secondary lg:block">{dashboardData.asOf} • Prices update every 500 ms</p>
+            <p className="type-body-s hidden text-secondary lg:block">15 July 2026 • Prices update every 500 ms</p>
           </div>
           <span className="type-label-m text-profit lg:hidden">LIVE</span>
           <button disabled className="hidden h-10 w-[148px] rounded-[var(--radius-sm)] border border-border-default bg-surface-raised text-primary disabled:opacity-100 lg:block">Export report</button>
@@ -35,10 +69,10 @@ export default async function DashboardPage() {
         <section aria-label="Portfolio metrics" className="mt-[14px] grid grid-cols-2 gap-x-[10px] gap-y-[14px] lg:mt-[18px] lg:grid-cols-4 lg:gap-3">
           <article className="col-span-2 h-[130px] rounded-[var(--radius-lg)] border border-border-default bg-surface p-[18px] lg:col-span-1 lg:h-[110px] lg:rounded-[var(--radius-md)] lg:p-4">
             <p className="type-label-m text-muted lg:text-[13px] lg:leading-5 lg:font-normal lg:tracking-normal lg:normal-case">NET PORTFOLIO VALUE</p>
-            <p className="mt-3 text-[32px] leading-10 font-bold lg:mt-1 lg:font-mono lg:text-[18px] lg:leading-6 lg:font-medium">₫1.284B</p>
-            <p className="type-data-m mt-1 text-profit"><span className="sr-only">Gain: </span>+₫34.82M&nbsp;&nbsp; +2.79%</p>
+            <p className="mt-3 text-[32px] leading-10 font-bold lg:mt-1 lg:font-mono lg:text-[18px] lg:leading-6 lg:font-medium">{formatCompactVnd(portfolio.netAssetValue)}</p>
+            <p className="type-data-m mt-1 text-profit"><span className="sr-only">Gain: </span>{formatCompactVnd(portfolio.totalReturn, true)}&nbsp;&nbsp; {formatSignedPercent(portfolio.totalReturnPercent, 2)}</p>
           </article>
-          {dashboardData.metrics.slice(1, 3).map((metric) => (
+          {metrics.map((metric) => (
             <article key={metric.label} className="h-[100px] rounded-[var(--radius-lg)] border border-border-default bg-surface p-[14px] lg:h-[110px] lg:rounded-[var(--radius-md)] lg:p-4">
               <p className="text-secondary">{metric.label}</p>
               <p className="type-data-m mt-[7px] text-primary">{metric.value}</p>
@@ -48,7 +82,7 @@ export default async function DashboardPage() {
             </article>
           ))}
           <article className="hidden h-[110px] rounded-[var(--radius-md)] border border-border-default bg-surface p-4 lg:block">
-            <p className="type-body-s text-secondary">Open orders</p><p className="type-data-l mt-1">12</p><p className="type-data-s mt-[7px] text-warning">4 pending review</p>
+            <p className="type-body-s text-secondary">Open orders</p><p className="type-data-l mt-1">{openOrders.length}</p><p className="type-data-s mt-[7px] text-warning">{openOrders.filter((order) => order.status === "PENDING").length} pending review</p>
           </article>
         </section>
 
@@ -64,7 +98,7 @@ export default async function DashboardPage() {
           <article className="h-[156px] rounded-[var(--radius-lg)] border border-border-default bg-surface p-[14px] lg:h-[284px] lg:p-[18px]">
             <div className="flex h-5 items-center justify-between lg:h-7"><h2 className="text-[14px] leading-5 font-medium lg:text-[20px] lg:leading-7 lg:font-semibold">Watchlist</h2><Link href="/market" className="type-body-s hidden text-profit hover:underline lg:block">View market</Link></div>
             <div>
-              {dashboardData.watchlist.map((quote, index) => (
+              {watchlist.map((quote, index) => (
                 <div key={quote.symbol} className={`grid h-[38px] grid-cols-3 items-center border-t border-border-default type-data-s lg:h-11 ${index > 2 ? "hidden lg:grid" : ""}`}>
                   {quote.symbol === "FPT" ? <Link href="/market/FPT" className="type-data-m text-primary hover:text-profit">{quote.symbol}</Link> : <span className="type-data-m text-primary">{quote.symbol}</span>}
                   <span className="text-center text-secondary">{quote.price}</span>
@@ -77,7 +111,7 @@ export default async function DashboardPage() {
 
         <section className="mt-[18px] hidden h-[210px] rounded-[var(--radius-md)] border border-border-default bg-surface p-[18px] lg:block">
           <div className="flex h-7 items-center justify-between"><h2 className="type-heading-h3">Top holdings</h2><span className="type-body-s text-profit">View portfolio →</span></div>
-          <DataTable caption="Top portfolio holdings" columns={holdingColumns} rows={dashboardData.holdings} getRowKey={(row) => row.symbol} hideHeader />
+          <DataTable caption="Top portfolio holdings" columns={holdingColumns} rows={holdings} getRowKey={(row) => row.symbol} hideHeader />
         </section>
       </main>
     </AppShell>

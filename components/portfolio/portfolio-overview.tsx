@@ -1,20 +1,13 @@
-"use client";
-
 import Link from "next/link";
-import { useMemo } from "react";
 
 import { EquityBars } from "@/components/dashboard/equity-bars";
 import { AllocationList } from "@/components/portfolio/allocation-list";
 import { Button } from "@/components/ui";
-import { usePortfolioStore } from "@/components/trading/portfolio-store";
 import { calculatePortfolio, formatCompactVnd, formatSignedPercent, type PositionMetrics } from "@/lib/portfolio";
+import type { PortfolioSnapshot } from "@/src/services/query.service";
 
-export function PortfolioOverview() {
-  const buyingPower = usePortfolioStore((state) => state.buyingPower);
-  const cashBalance = usePortfolioStore((state) => state.cashBalance);
-  const realizedPnl = usePortfolioStore((state) => state.realizedPnl);
-  const positions = usePortfolioStore((state) => state.positions);
-  const portfolio = useMemo(() => calculatePortfolio(positions, cashBalance, realizedPnl), [cashBalance, positions, realizedPnl]);
+export function PortfolioOverview({ snapshot }: { snapshot: PortfolioSnapshot }) {
+  const portfolio = calculatePortfolio(snapshot.positions, snapshot.cashBalance, snapshot.realizedPnl);
 
   return (
     <main className="p-4 lg:p-6">
@@ -39,7 +32,7 @@ export function PortfolioOverview() {
         <div className="hidden grid-cols-4 gap-3 lg:grid">
           <PortfolioMetric label="Net portfolio value" value={formatCompactVnd(portfolio.netAssetValue)} supporting={`${formatCompactVnd(portfolio.unrealizedPnl, true)}  ${formatSignedPercent(portfolio.unrealizedPnl / Math.max(1, portfolio.costBasis) * 100, 2)}`} profit />
           <PortfolioMetric label="Market value" value={formatCompactVnd(portfolio.marketValue)} supporting={`${portfolio.positions.length} open positions`} />
-          <PortfolioMetric label="Cash & buying power" value={formatCompactVnd(buyingPower)} supporting={`${(buyingPower / Math.max(1, portfolio.netAssetValue) * 100).toFixed(1)}% available`} />
+          <PortfolioMetric label="Cash & buying power" value={formatCompactVnd(snapshot.buyingPower)} supporting={`${(snapshot.buyingPower / Math.max(1, portfolio.netAssetValue) * 100).toFixed(1)}% available`} />
           <PortfolioMetric label="Total return" value={formatCompactVnd(portfolio.totalReturn, true)} supporting={`${formatSignedPercent(portfolio.totalReturnPercent, 2)} all time`} profit />
         </div>
       </section>

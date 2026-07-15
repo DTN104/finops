@@ -18,7 +18,7 @@
 - [x] Filter theo symbol hoặc company với deferred search ở optimized mode.
 - [x] Chuyển đổi trực tiếp giữa Optimized và Baseline.
 - [x] Reset các chỉ số đo hiệu năng.
-- [x] Tách state benchmark khỏi Zustand trading/portfolio store.
+- [x] Tách state benchmark khỏi PostgreSQL trading persistence và Zustand market store.
 
 ## 2. Route và giao diện
 
@@ -61,7 +61,7 @@ Mỗi tick thực hiện:
 
 Giá cập nhật dao động quanh seeded price (`baseLast`) thay vì cộng dồn vô hạn. Vì 4.900 row objects còn lại giữ nguyên reference, `React.memo` có thể bỏ qua chúng trong optimized mode.
 
-Benchmark state chỉ nằm trong client component của Performance Lab. Route không import hoặc ghi vào `components/trading/portfolio-store.ts`, vì vậy mô phỏng 50 ms không ảnh hưởng market cadence 500 ms hay portfolio/order state của ứng dụng.
+Benchmark state chỉ nằm trong client component của Performance Lab. Route không import hoặc ghi vào PostgreSQL trading services hay `components/market/market-store.ts`, vì vậy mô phỏng 50 ms không ảnh hưởng market cadence 500 ms hoặc portfolio/order state của ứng dụng.
 
 ## 5. Performance measurements
 
@@ -126,7 +126,7 @@ Các số đo phụ thuộc browser, CPU, development/production build và tải
 
 | Kiểm tra | Kết quả |
 | --- | --- |
-| `npm test` | Pass — 25/25 tests |
+| `npm test` | Pass — 22/22 tests |
 | `npm run lint` | Pass |
 | `npm run typecheck` | Pass |
 | `npm run build` | Pass |

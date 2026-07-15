@@ -8,5 +8,5 @@ export default async function NewCorporateActionPage() {
   const user = await getDemoSession();
   if (!user) redirect("/login");
   if (!canManageOperations(user.role)) redirect("/corporate-actions");
-  return <AppShell user={user} current="corporate-actions"><CorporateActionForm actor={user.name} /></AppShell>;
+  return <AppShell user={user} current="corporate-actions"><CorporateActionForm /></AppShell>;
 }

@@ -13,10 +13,11 @@ import {
 import { ArrowUpDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { useMarketStore } from "@/components/market/market-store";
 import { Pagination, StatusBadge } from "@/components/ui";
-import { formatMarketPrice, formatPercent, marketInstruments, type MarketInstrument } from "@/lib/market-data";
+import { formatMarketPrice, formatPercent, type MarketInstrument } from "@/lib/market-data";
 import { cn } from "@/lib/utils";
 
 const columnClasses: Record<string, string> = {
@@ -31,29 +32,13 @@ const columnClasses: Record<string, string> = {
 };
 
 function useRealtimeMarket(): MarketInstrument[] {
-  const [instruments, setInstruments] = useState<MarketInstrument[]>(() => [...marketInstruments]);
-  const tick = useRef(0);
+  const instruments = useMarketStore((state) => state.instruments);
+  const applyNextBatch = useMarketStore((state) => state.applyNextBatch);
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      tick.current += 1;
-      const updatedIndex = 1 + (tick.current % 9);
-      const delta = [100, -50, 50, 0][tick.current % 4];
-      setInstruments((current) => current.map((instrument, index) => {
-        if (index !== updatedIndex) return instrument;
-        const last = Math.max(100, instrument.last + delta);
-        return {
-          ...instrument,
-          last,
-          bid: last - 100,
-          ask: last + 100,
-          volume: instrument.volume + 100 * (tick.current % 17),
-          changePercent: Number((((last - instrument.previousClose) / instrument.previousClose) * 100).toFixed(2)),
-        };
-      }));
-    }, 500);
+    const interval = window.setInterval(applyNextBatch, 500);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [applyNextBatch]);
 
   return instruments;
 }

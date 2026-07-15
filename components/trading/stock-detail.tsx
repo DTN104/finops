@@ -1,16 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
+import { placeOrderAction } from "@/app/actions/trading";
 import { Button } from "@/components/ui";
 import { CandlestickChart } from "@/components/trading/candlestick-chart";
 import { OrderBook } from "@/components/trading/order-book";
 import { OrderConfirmationDialog, OrderSuccessDialog, type PreparedOrder } from "@/components/trading/order-dialogs";
 import { OrderTicket } from "@/components/trading/order-ticket";
-import { usePortfolioStore } from "@/components/trading/portfolio-store";
 import type { DemoRole } from "@/lib/session";
 import { canPlaceOrders, validateOrder, type MockOrder, type OrderSide } from "@/lib/trading";
+import type { PortfolioSnapshot } from "@/src/services/query.service";
 
 const stats = [
   { label: "Open", value: "124,800", mobile: true },
@@ -23,16 +24,19 @@ const stats = [
 
 type FlowStage = "closed" | "ticket" | "confirm" | "success";
 
-export function StockDetail({ role, actor }: { role: DemoRole; actor: string }) {
+export function StockDetail({ role, snapshot }: { role: DemoRole; snapshot: PortfolioSnapshot }) {
   const router = useRouter();
-  const buyingPower = usePortfolioStore((state) => state.buyingPower);
-  const position = usePortfolioStore((state) => state.positions.FPT);
-  const submitOrder = usePortfolioStore((state) => state.submitOrder);
+  const position = snapshot.positions.FPT;
+  const [buyingPower, setBuyingPower] = useState(snapshot.buyingPower);
   const [side, setSide] = useState<OrderSide>("buy");
   const [stage, setStage] = useState<FlowStage>("closed");
   const [prepared, setPrepared] = useState<PreparedOrder | null>(null);
   const [submitted, setSubmitted] = useState<MockOrder | null>(null);
+  const [error, setError] = useState("");
+  const [pending, startTransition] = useTransition();
   const permitted = canPlaceOrders(role);
+
+  if (!position) return null;
 
   const openTicket = (nextSide: OrderSide) => {
     if (!permitted) return;
@@ -44,21 +48,28 @@ export function StockDetail({ role, actor }: { role: DemoRole; actor: string }) 
 
   const confirmOrder = () => {
     if (!prepared) return;
-    const current = usePortfolioStore.getState();
-    const currentPosition = current.positions.FPT;
     const validation = validateOrder(prepared.draft, {
       role,
-      buyingPower: current.buyingPower,
-      positionQuantity: currentPosition.quantity,
-      averageCost: currentPosition.averageCost,
+      buyingPower,
+      positionQuantity: position.quantity,
+      averageCost: position.averageCost,
     });
     if (!validation.success) {
       setStage("ticket");
       return;
     }
-    const order = submitOrder(validation.draft, role, actor);
-    setSubmitted(order);
-    setStage("success");
+    startTransition(async () => {
+      const result = await placeOrderAction(validation.draft);
+      if (!result.success) {
+        setError(result.error);
+        setStage("ticket");
+        return;
+      }
+      if (validation.draft.side === "buy") setBuyingPower((current) => current - validation.estimate.total);
+      setError("");
+      setSubmitted(result.order);
+      setStage("success");
+    });
   };
 
   return (
@@ -74,8 +85,8 @@ export function StockDetail({ role, actor }: { role: DemoRole; actor: string }) 
             <p className="type-data-s mt-[3px] text-profit"><span className="hidden lg:inline">+2,600&nbsp;&nbsp; </span>+2.10%</p>
           </div>
           <div className="hidden gap-[10px] lg:flex">
-            <Button size="large" variant="secondary" disabled={!permitted} onClick={() => openTicket("sell")} className="w-[148px]">Sell</Button>
-            <Button size="large" disabled={!permitted} onClick={() => openTicket("buy")} className="w-[148px]">Buy FPT</Button>
+            <Button size="large" variant="secondary" disabled={!permitted || pending} onClick={() => openTicket("sell")} className="w-[148px]">Sell</Button>
+            <Button size="large" disabled={!permitted || pending} onClick={() => openTicket("buy")} className="w-[148px]">Buy FPT</Button>
           </div>
         </header>
 
@@ -110,6 +121,7 @@ export function StockDetail({ role, actor }: { role: DemoRole; actor: string }) 
           <Button size="large" disabled={!permitted} onClick={() => openTicket("buy")} className="w-full">Buy</Button>
         </div>
         {!permitted ? <p role="note" className="type-body-s text-center text-warning">Viewer role is read-only. Switch to Trader to place mock orders.</p> : null}
+        {error ? <p role="alert" className="type-body-s text-center text-loss">{error}</p> : null}
       </main>
 
       <OrderTicket

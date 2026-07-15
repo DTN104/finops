@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
+import { cancelOrderAction } from "@/app/actions/trading";
 import { CancelOrderDialog } from "@/components/orders/cancel-order-dialog";
 import { Button, EmptyState } from "@/components/ui";
-import { usePortfolioStore } from "@/components/trading/portfolio-store";
 import type { DemoRole } from "@/lib/session";
 import { canCancelOrder, isOrderActive, type MockOrder, type OrderStatus } from "@/lib/trading";
 
@@ -14,9 +14,9 @@ type OrderTab = "ALL" | "OPEN" | "FILLED" | "CANCELLED" | "REJECTED";
 const desktopTabs: OrderTab[] = ["ALL", "OPEN", "FILLED", "CANCELLED", "REJECTED"];
 const mobileTabs: OrderTab[] = ["OPEN", "FILLED", "CANCELLED"];
 
-export function OrdersScreen({ role, actor }: { role: DemoRole; actor: string }) {
-  const orders = usePortfolioStore((state) => state.orders);
-  const cancelOrder = usePortfolioStore((state) => state.cancelOrder);
+export function OrdersScreen({ role, actor, initialOrders }: { role: DemoRole; actor: string; initialOrders: MockOrder[] }) {
+  const [orders, setOrders] = useState(initialOrders);
+  const [pending, startTransition] = useTransition();
   const [tab, setTab] = useState<OrderTab>("OPEN");
   const [query, setQuery] = useState("");
   const [side, setSide] = useState("all");
@@ -43,9 +43,12 @@ export function OrdersScreen({ role, actor }: { role: DemoRole; actor: string })
 
   const confirmCancel = () => {
     if (!selectedOrder) return;
-    const cancelled = cancelOrder(selectedOrder.id, role, actor);
-    setCancelOpen(false);
-    setAnnouncement(cancelled ? `${selectedOrder.id} was cancelled` : `${selectedOrder.id} cannot be cancelled`);
+    startTransition(async () => {
+      const result = await cancelOrderAction(selectedOrder.id);
+      if (result.success) setOrders((current) => current.map((order) => order.id === selectedOrder.id ? { ...order, status: "CANCELLED", reservedBuyingPower: 0 } : order));
+      setCancelOpen(false);
+      setAnnouncement(result.success ? `${selectedOrder.id} was cancelled` : result.error);
+    });
   };
 
   return (
@@ -91,7 +94,7 @@ export function OrdersScreen({ role, actor }: { role: DemoRole; actor: string })
           <div className="min-w-0 flex-1"><p className="type-label-m text-muted">SELECTED ORDER</p><h2 className="type-heading-h3 mt-[5px]">{selectedOrder.symbol} • {selectedOrder.side.toUpperCase()} {selectedOrder.quantity.toLocaleString("en-US")} @ ₫{selectedOrder.limitPrice.toLocaleString("en-US")}</h2><p className="type-data-s mt-[5px] text-secondary">{selectedOrder.id} • Submitted {selectedOrder.submittedAt} • Status {selectedOrder.status}</p></div>
           <div className="flex gap-[10px]">
             {selectedOrder.symbol === "FPT" ? <Link href="/market/FPT" className="flex h-10 w-[148px] items-center justify-center rounded-[8px] border border-border-default bg-surface-raised type-label-l">View details</Link> : <Button disabled variant="secondary" className="w-[148px]">View details</Button>}
-            <Button variant="danger" disabled={!cancellable} onClick={() => setCancelOpen(true)} className="w-[148px]">{cancellable ? "Cancel order" : "Cannot cancel"}</Button>
+            <Button variant="danger" disabled={!cancellable || pending} onClick={() => setCancelOpen(true)} className="w-[148px]">{cancellable ? "Cancel order" : "Cannot cancel"}</Button>
           </div>
         </section>
       ) : null}

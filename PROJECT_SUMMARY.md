@@ -14,7 +14,7 @@ The current application supports three end-to-end vertical slices:
 2. `Dashboard → Market → FPT stock detail → Buy or Sell → Confirm → Success`
 3. `Portfolio Overview → Position Detail` and `Orders → Cancel → Confirmation`
 
-The implementation is built with the Next.js App Router, strict TypeScript, Tailwind CSS, Server Components by default, an HTTP-only mock session, Zustand for browser-side portfolio state, Zod for order validation, and TanStack Table for the market experience.
+The implementation is built with the Next.js App Router, strict TypeScript, Tailwind CSS, Server Components by default, PostgreSQL with Drizzle ORM, an HTTP-only demo session, Zustand for in-memory market streaming state, Zod validation, and TanStack Table for the market experience.
 
 All market quotes, portfolio balances, identities, positions, orders, timestamps, charts, and calculations are deterministic mock data. The application must never be presented as a live brokerage or source of financial advice.
 
@@ -96,8 +96,9 @@ Some documents were written before the current vertical slices were implemented.
 
 | Library | Version/range | Responsibility |
 | --- | --- | --- |
-| Zustand | `^5.0.14` | Persisted client-side demo portfolio and order state |
-| Zod | `^4.4.3` | Session-role parsing and order validation |
+| PostgreSQL / Drizzle ORM | `drizzle-orm ^0.45.2` | Server-side business persistence and transactions |
+| Zustand | `^5.0.14` | In-memory client market streaming state |
+| Zod | `^4.4.3` | Environment, service input, session-role and form validation |
 | TanStack React Table | `^8.21.3` | Market sorting, filtering, row models, and pagination |
 | Lucide React | `^1.24.0` | Mobile navigation and interface icons |
 | `clsx` | `^2.1.1` | Conditional class composition |
@@ -112,7 +113,7 @@ Some documents were written before the current vertical slices were implemented.
 | Node test runner + `tsx` | TypeScript unit and rendering tests |
 | Webpack-backed Next commands | Development and production builds |
 
-The product specification names Recharts and TanStack Virtual for later phases. They are not currently installed or used. Current financial charts are deterministic inline SVG, and the market uses TanStack Table pagination rather than virtualization.
+TanStack Virtual powers the Performance Lab optimized mode. Current financial charts are deterministic inline SVG, and the primary market screen uses TanStack Table pagination rather than virtualization. Recharts remains a future option for interactive charts.
 
 ## 5. Application routes
 
@@ -128,23 +129,14 @@ The product specification names Recharts and TanStack Virtual for later phases. 
 | `/portfolio` | Dynamic Server Component + client portfolio | Authenticated | Calculated portfolio metrics, allocation, performance, and holdings |
 | `/portfolio/[symbol]` | Dynamic Server Component + client position detail | Authenticated | FPT position metrics, tax lots, chart, and activity |
 | `/orders` | Dynamic Server Component + client order manager | Authenticated | Filtered order history, detail, and cancellation |
+| `/corporate-actions` and children | Dynamic Server Components + client forms | Authenticated; Admin mutates | Corporate action list, detail, create/edit and publish |
+| `/admin/audit-logs` | Dynamic Server Component + client filters | Admin | Persisted audit trail |
+| `/admin/users` | Dynamic Server Component + client dialog | Admin | User and role management |
+| `/admin/settings` | Dynamic Server Component + client form | Admin | Persisted user settings |
+| `/performance-lab` | Dynamic shell + isolated client benchmark | Authenticated | 5,000-row optimized/baseline benchmark |
 | `/dev/components` | Static development route | Public in current code | Shared component preview/gallery |
 
 `/market/[symbol]` currently accepts only `FPT`, case-insensitively. Any other symbol calls Next.js `notFound()`.
-
-### Planned but not implemented routes
-
-The architecture documents propose the following future routes:
-
-- `/corporate-actions`
-- `/corporate-actions/[id]`
-- `/corporate-actions/new`
-- `/admin/audit-logs`
-- `/admin/users`
-- `/admin/settings`
-- `/performance-lab`
-
-These are not production routes in the current repository.
 
 ## 6. Implemented user journeys
 
@@ -169,7 +161,7 @@ The login page includes:
 - “Continue as Demo Trader” action.
 - “Continue as Viewer” action.
 
-The email, password, remember-device, and forgot-password controls are presentation-only. Authentication currently trusts the submitted demo role; it does not verify credentials against a user database.
+The email, password, remember-device, and forgot-password controls are presentation-only. Login uses the submitted demo role to resolve a seeded active user from PostgreSQL; it does not verify the displayed password.
 
 ### 6.2 Dashboard
 
@@ -185,7 +177,7 @@ The authenticated dashboard includes:
 - Links from the watchlist to Market and FPT detail.
 - Responsive mobile metric and content composition.
 
-Dashboard values are static fixtures from `lib/mock-data.ts`. They do not yet read from the persisted trading store, so submitting an order does not update the dashboard cards.
+Dashboard portfolio metrics, open-order count and holdings read from PostgreSQL. The 30-day equity visualization and watchlist quote source remain deterministic demo data.
 
 ### 6.3 Market
 
@@ -249,7 +241,7 @@ FPT detail
   → Portfolio or Market
 ```
 
-An accepted mock buy order is stored as `OPEN`, appears immediately in Orders, and reserves its estimated total from buying power. When the deterministic store fill action marks it filled, cash and the weighted-average position are updated.
+An accepted paper buy order is stored as `OPEN` in PostgreSQL, appears in Orders, and reserves its estimated total from buying power. The fill transaction updates execution, cash, ledger and weighted-average position atomically.
 
 ### 6.6 Sell flow
 
@@ -273,7 +265,7 @@ An accepted sell order is stored as `OPEN` and appears immediately in Orders. A 
 
 ### 6.7 Portfolio Overview and Position Detail
 
-Portfolio Overview reads the shared Zustand trading state and calculates:
+Portfolio Overview reads the account and positions from PostgreSQL and calculates:
 
 - Net asset value from cash plus current market value.
 - Market value and cost basis for every position.
@@ -281,13 +273,13 @@ Portfolio Overview reads the shared Zustand trading state and calculates:
 - Allocation percentages by sector plus cash.
 - Responsive holdings rows with profit/loss text semantics.
 
-The FPT Position Detail route derives quantity, average cost, market value, daily P&L, unrealized P&L, allocation, filled tax lots, and recent order activity from the same state. Its deterministic performance chart adapts to desktop and mobile layouts.
+The FPT Position Detail route derives quantity, average cost, market value, daily P&L, unrealized P&L, allocation, filled tax lots, and recent order activity from the same persisted snapshot. Its deterministic performance chart adapts to desktop and mobile layouts.
 
 ### 6.8 Orders and Cancel Order
 
 Orders provides All, Open, Filled, Cancelled, and Rejected views, plus desktop search, side, and order-type filters. Selecting an order shows its detail and the actions permitted for the active demo user.
 
-Cancellation rules are enforced both in the UI and in the shared store:
+Cancellation rules are enforced both in the UI and in the transactional trading service:
 
 - Viewer cannot cancel orders.
 - Trader can cancel an active order submitted by that trader.
@@ -324,7 +316,7 @@ Protected page behavior:
 3. A missing or invalid session redirects to `/login`.
 4. The authenticated `DemoUser` is passed into `AppShell` and the relevant interactive client boundary.
 
-The 30-minute value is cookie lifetime, not true idle-time tracking. There is no database, refresh token, password verification, CSRF-specific token, or external identity provider.
+The 30-minute value is cookie lifetime, not true idle-time tracking. The cookie stores a seeded user UUID and the Server Component resolves the active user/role from PostgreSQL. There is no refresh token, password verification, CSRF-specific token, or external identity provider.
 
 The mobile user-avatar button submits a server action that deletes the cookie and redirects to `/login`. A desktop logout control is not currently implemented.
 
@@ -344,10 +336,10 @@ The mobile user-avatar button submits a server action that deletes the cookie an
 
 ### Currently enforced permissions
 
-The implemented trading and order-management slices enforce permission at both interaction and state boundaries:
+The implemented trading and order-management slices enforce permission at both interaction and service boundaries:
 
 1. UI/domain validation through `canPlaceOrders()`, `validateOrder()`, and `canCancelOrder()`.
-2. The Zustand store independently rejects unauthorized submissions and cancellations.
+2. Transactional services independently reject unauthorized submissions and cancellations and write denied audit logs.
 
 Current behavior:
 
@@ -357,7 +349,7 @@ Current behavior:
 - Trader can cancel their own active orders, but not terminal or another user's orders.
 - Admin is recognized by the session/domain model and can submit orders.
 - Admin can cancel any active mock order.
-- Admin-specific routes and controls are not implemented.
+- Admin-specific routes for corporate actions, audit, users and settings are implemented.
 
 ## 9. Trading validation and calculations
 
@@ -365,7 +357,7 @@ Order input is validated with the Zod schema in `lib/trading.ts`.
 
 ### Schema rules
 
-- Symbol must currently be exactly `FPT`.
+- Symbol must be an uppercase instrument code that exists and is tradable in PostgreSQL.
 - Side must be `buy` or `sell`.
 - Order type must be `LIMIT`.
 - Quantity must be a positive whole number.
@@ -374,7 +366,7 @@ Order input is validated with the Zod schema in `lib/trading.ts`.
 - Limit price must use ₫100 ticks.
 - Viewer users cannot place orders.
 - Buy total including fees cannot exceed buying power.
-- Sell quantity cannot exceed the available FPT position.
+- Sell quantity cannot exceed the available position after active sell reservations.
 
 ### Calculation formulas
 
@@ -392,52 +384,26 @@ realizedPnl = (limitPrice - averageCost) × quantity
 
 The fee is a deterministic 0.15% simulation. It is not a statement of actual exchange, broker, or tax charges.
 
-The order is revalidated immediately before submission using the latest Zustand state. This prevents a stale confirmation dialog from bypassing current buying-power or position checks.
+The order is revalidated inside a Drizzle transaction using locked account/position rows. This prevents a stale confirmation dialog or concurrent request from bypassing current buying-power or position checks.
 
-## 10. Client-side portfolio state
+## 10. PostgreSQL portfolio state
 
-The shared demo portfolio is defined in `components/trading/portfolio-store.ts`.
+The persistence layer is defined under `src/db`, with domain repositories in `src/repositories` and business services in `src/services`.
 
-### Initial state
+### Initial deterministic state
 
-```text
-Buying power: ₫486,200,000
-Cash balance: ₫486,200,000
-Realized P&L: ₫24,514,000
-Positions: FPT, VCB, HPG, MWG, SSI, VNM
-FPT quantity / average cost: 2,400 / ₫112,100
-Orders: deterministic open, partial, pending, filled, and cancelled history
-Next order sequence: 1052
-```
+`npm run db:seed` recreates three demo users/accounts, FPT/VCB/HPG/MWG/SSI/VNM instruments, positions, sample orders/execution, cash ledger, corporate actions, responses, settings and audit data with fixed UUIDs and timestamps.
 
 ### Persistence
 
-- Zustand's `persist` middleware writes to browser local storage.
-- Storage key: `finops-demo-portfolio`.
-- Store version: `2`, with migration support for the previous order shape.
-- State is local to the browser profile/device.
-- State is not connected to the HTTP-only session identity.
-- Clearing browser storage resets persisted portfolio/order state.
-- The store exposes a `reset()` action for deterministic development/testing workflows.
-- A non-browser in-memory storage fallback keeps unit tests deterministic without local-storage warnings.
-
-### Submitted order shape
-
-Each order contains:
-
-- Symbol.
-- Buy or sell side.
-- Quantity.
-- Limit price.
-- `LIMIT` or seeded `STOP` order type.
-- Deterministic order ID.
-- `PENDING`, `OPEN`, `PARTIAL`, `FILLED`, `CANCELLED`, or `REJECTED` status.
-- Filled quantity and reserved buying power.
-- Deterministic submitted time.
-- Actor name.
-- Full calculated estimate.
-
-Newly submitted order IDs begin with `MOCK-20260714-1052` and increment locally. Seeded orders use earlier stable IDs so the authored order-history states are available immediately.
+- PostgreSQL schema: `finops`.
+- Drizzle ORM is used for reads and writes; Drizzle Kit owns migrations.
+- Server Components read account, portfolio, order and admin data.
+- Server Actions call transactional services for business mutations.
+- Place, fill, cancel, publish and role changes use database transactions and row locks.
+- Every business mutation writes a success or denied audit log.
+- No business state is stored in browser local storage.
+- Market streaming and Performance Lab state remain in-memory client data and do not write ticks to PostgreSQL.
 
 ### Portfolio calculations
 
@@ -445,22 +411,16 @@ Newly submitted order IDs begin with `MOCK-20260714-1052` and increment locally.
 
 ### Order lifecycle actions
 
-- `submitOrder()` creates an open order and reserves buy-side buying power.
-- `fillOrder()` supports partial and full deterministic fills and updates cash, positions, buying power, and realized P&L.
-- `cancelOrder()` checks role, ownership, active status, and restores an eligible buy reservation once.
+- `placeOrder()` creates an open order and reserves buy-side buying power.
+- `fillOrder()` supports partial and full fills and atomically updates execution, cash, positions, buying power, ledger and realized P&L.
+- `cancelOrder()` checks role, ownership and active status, then restores an eligible buy reservation once.
 - Every action guards against repeated transitions from a terminal state.
 
 ## 11. Deterministic mock data
 
 ### Dashboard fixtures
 
-`lib/mock-data.ts` provides:
-
-- Four dashboard metrics.
-- Twenty-five equity-bar heights.
-- Five watchlist symbols.
-- Four top holdings.
-- A fixed display date.
+`lib/mock-data.ts` retains the deterministic equity-bar heights and landing-page previews. Authenticated dashboard account/portfolio data comes from PostgreSQL; watchlist quotes come from `lib/market-data.ts`.
 
 ### Market universe
 
@@ -510,7 +470,7 @@ Client boundaries are used for:
 - FPT order-flow state machine.
 - Order ticket input state.
 - Dialog focus management.
-- Browser-local Zustand state and persistence.
+- In-memory Zustand market streaming state; business persistence stays server-side in PostgreSQL.
 
 ### Main runtime flow
 
@@ -522,7 +482,8 @@ Browser request
   → server-rendered AppShell
   → interactive MarketTable or StockDetail client boundary
   → Zod/domain validation
-  → Zustand persisted mock portfolio
+  → Server Action and Drizzle transaction
+  → PostgreSQL business state and audit log
   → confirmation/success UI
 ```
 
@@ -674,35 +635,25 @@ Remaining accessibility work should include automated browser-level audits, mobi
 
 ### Product limitations
 
-- Corporate actions are not implemented.
-- Audit logs are not implemented.
-- User management is not implemented.
-- Settings are not implemented.
-- Performance Lab is not implemented.
-- Admin has no visible login action or admin workspace.
 - Only FPT has a stock-detail route and trading flow.
-- Only LIMIT orders are supported.
-- There is no timed exchange simulator or automatic matching engine; partial/full fills are deterministic store actions.
+- The authored UI focuses on LIMIT orders; the schema also represents STOP orders.
+- There is no timed exchange simulator or automatic matching engine; fill is an explicit transactional service action.
 - Rejection is represented in the domain but no current UI action generates a rejected order.
-- Dashboard metrics do not synchronize with the Zustand trading store.
+- User creation and enable/disable controls are not implemented.
 
 ### Data and backend limitations
 
-- There is no database.
-- There are no API route handlers.
+- PostgreSQL is local/demo persistence and does not represent a production broker ledger.
+- There are no external-style API Route Handlers yet.
 - There is no real authentication.
-- There is no real authorization service.
+- Authorization is role-based against seeded users, not an enterprise identity system.
 - There is no live market feed.
 - There is no websocket connection.
-- There is no server-side order state.
-- Browser-local state can be modified by the user and is not trustworthy.
-- Demo portfolio state is not isolated by session role or user identity.
 - The market's 5,000 instruments are currently included in the client-side module rather than paged from a mock API.
 
 ### UI limitations
 
 - Desktop global search is disabled.
-- Corporate Actions, Audit Logs, Users, Settings, and Performance Lab navigation entries remain disabled placeholders.
 - Marketing navigation labels are not complete product links.
 - Desktop logout is missing.
 - `/dev/components` is not gated to development mode.
@@ -715,9 +666,8 @@ Remaining accessibility work should include automated browser-level audits, mobi
 This is a portfolio demo, not a production authentication or trading system:
 
 - Login credentials are not checked.
-- A role value is trusted by the server action after enum parsing.
-- There is no persistent server-side user or permission record.
-- Client-side portfolio enforcement is not a secure authorization boundary.
+- Demo login chooses a seeded role without password verification.
+- Persistent user/role records and transactional authorization exist, but this is not a production authentication boundary.
 - All data should be treated as public, fictional demo information.
 
 ## 18. Testing and quality gates
@@ -818,15 +768,13 @@ Password: finops-demo
 
 These values are illustrative and are not validated.
 
-### Reset local trading state
+### Reset deterministic business state
 
-Remove the browser local-storage entry:
-
-```text
-finops-demo-portfolio
+```bash
+npm run db:seed
 ```
 
-Signing out deletes the session cookie but does not currently clear the persisted portfolio store.
+Signing out deletes only the session cookie. Running the seed command recreates the PostgreSQL demo dataset.
 
 ## 20. Repository structure
 
@@ -849,19 +797,25 @@ finops/
 │   ├── orders/                 Order list, filters, detail, and cancel dialog
 │   ├── portfolio/              Portfolio analytics and position components
 │   ├── shell/                  Desktop and mobile application shell
-│   ├── trading/                FPT detail, tickets, dialogs, store, charts
+│   ├── trading/                FPT detail, tickets, dialogs, and charts
 │   ├── ui/                     Reusable design-system components and tests
 │   └── brand.tsx               FinOps brand component
 ├── docs/                       Figma handoff, maps, plans, decisions
 ├── lib/
 │   ├── market-data.ts          5,000 deterministic instruments and order book
-│   ├── mock-data.ts            Dashboard fixtures
+│   ├── mock-data.ts            Landing/equity demo fixtures
 │   ├── portfolio.ts            Position, NAV, return, and allocation calculations
-│   ├── session.ts              Demo users and HTTP-only cookie helpers
+│   ├── session.ts              DB-backed demo session and HTTP-only cookie helpers
 │   ├── trading.ts              Order schema, permission, estimates, validation
 │   ├── utils.ts                Shared class utility
 │   └── *.test.ts               Domain and fixture tests
 ├── public/                     Static starter assets
+├── src/
+│   ├── db/                     Drizzle client, domain schemas, deterministic seed
+│   ├── repositories/           PostgreSQL data access
+│   └── services/               Transactional business and query services
+├── drizzle/                    Generated SQL migrations and metadata
+├── drizzle.config.ts           Drizzle Kit configuration
 ├── AGENTS.md                   Project engineering rules
 ├── package.json                Scripts and dependencies
 ├── PROJECT_SUMMARY.md          This document
@@ -893,15 +847,11 @@ Project-specific rules from `AGENTS.md` include:
 
 The most coherent continuation is:
 
-1. Connect Dashboard metrics and open-order counts to the shared deterministic portfolio store.
-2. Add a deterministic timed matching simulator if interactive fills are needed beyond seeded/tested lifecycle actions.
-3. Introduce deterministic mock Route Handlers for session, market, portfolio, and orders.
-4. Add browser-level tests for login, Viewer denial, Trader buy/sell, cancellation, fills, and persistence.
-5. Implement corporate actions.
-6. Implement Admin authentication choice, audit logs, user management, and settings.
-7. Implement Performance Lab with TanStack Virtual and the 5,000-row benchmark.
-8. Wire product states: loading, empty, disconnected, market closed, API error, permission denied, session expired, and not found.
-9. Replace or extend custom SVG financial charts with Recharts where interaction is required.
+1. Add a deterministic timed matching simulator if interactive fills are needed beyond seeded/tested lifecycle actions.
+2. Add Route Handlers only when realtime streaming or external-style APIs are introduced.
+3. Add browser-level tests for login, Viewer denial, Trader buy/sell, cancellation, fills, DB persistence and Admin workflows.
+4. Wire product states: loading, empty, disconnected, market closed, API error, permission denied, session expired, and not found.
+5. Replace or extend custom SVG financial charts with Recharts where interaction is required.
 
 Each phase should follow the established workflow:
 
