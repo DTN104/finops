@@ -39,7 +39,7 @@ export function Sidebar({ user, current }: { user: DemoUser; current: WorkspaceS
           const href = item.href;
           const content = (
             <>
-              <span className={`h-5 w-[3px] rounded-full ${active ? "bg-brand" : "bg-[var(--finops-navy-700)]"}`} />
+              <span className={`h-5 w-[3px] rounded-full ${active ? "bg-brand" : "bg-border-default"}`} />
               <span>{item.label}</span>
             </>
           );

@@ -143,7 +143,7 @@ function FrameBudget({ optimized, frameTimes }: { optimized: boolean; frameTimes
   const samples = frameTimes.length ? frameTimes : Array.from({ length: 16 }, (_, index) => optimized ? 3 + (index % 5) : 18 + (index % 7) * 2);
 
   return (
-    <aside className="h-fit rounded-[14px] border border-border-default bg-surface p-4 min-[1400px]:h-[456px]">
+    <aside className="rounded-[14px] border border-border-default bg-surface p-4">
       <h2 className="type-heading-h3">Frame budget</h2>
       <p className="type-data-s mt-[14px] text-muted">16.7 ms / frame</p>
       <div aria-label="Recent React commit durations" className="mt-[14px] flex h-[170px] items-end gap-1.5 rounded-[10px] bg-canvas p-3">
@@ -257,7 +257,7 @@ export function PerformanceLab() {
         <MetricCard label="Update cadence" value={`${PERFORMANCE_CADENCE_MS} ms`} supporting={`${PERFORMANCE_UPDATES_PER_TICK} updates / batch`} className="col-span-2 h-[102px] w-auto gap-1 p-[14px] lg:col-span-1 [&_[data-slot=trend-bar]]:hidden" />
       </section>
 
-      <section className="mt-[14px] grid gap-3 min-[1400px]:grid-cols-[minmax(0,790px)_minmax(300px,366px)]">
+      <section className="mt-[14px] grid gap-3 min-[1400px]:grid-cols-[minmax(0,1fr)_minmax(300px,366px)]">
         <div className="overflow-x-auto">
           <Profiler id={optimized ? "optimized-market-table" : "baseline-market-table"} onRender={onProfilerRender}>
             {optimized

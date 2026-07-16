@@ -1,5 +1,6 @@
 import { Brand } from "@/components/brand";
 import { EquityBars } from "@/components/dashboard/equity-bars";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { ActionLink } from "@/components/ui/action-link";
 import { dashboardData } from "@/lib/mock-data";
 
@@ -20,6 +21,7 @@ export default function LandingPage() {
             <span>Architecture</span>
             <span>Performance Lab</span>
           </nav>
+          <ThemeToggle />
           <ActionLink href="/login" variant="secondary" size="medium" className="w-[112px] lg:w-[148px]">
             Sign in
           </ActionLink>

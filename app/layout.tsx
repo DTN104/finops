@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: "Professional paper-trading portfolio application",
 };
 
+const themeScript = `try{const theme=localStorage.getItem("finops-theme");if(theme==="light"||theme==="dark")document.documentElement.dataset.theme=theme}catch{}`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,8 +29,10 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="dark"
+      suppressHydrationWarning
       className={`${inter.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
+      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

@@ -1,10 +1,12 @@
 import { loginAsDemoUser } from "@/app/login/actions";
 import { Brand } from "@/components/brand";
 import { LoginForm } from "@/components/login/login-form";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-canvas lg:grid lg:h-screen lg:grid-cols-2 lg:overflow-hidden">
+    <main className="relative min-h-screen bg-canvas lg:grid lg:h-screen lg:grid-cols-2 lg:overflow-hidden">
+      <div className="absolute top-[72px] right-6 z-10 lg:top-6"><ThemeToggle /></div>
       <section className="hidden h-full flex-col gap-7 bg-surface px-[72px] py-16 lg:flex">
         <Brand />
         <div className="h-[120px] shrink-0" />
