@@ -1,6 +1,17 @@
 [
   {
     "date": "2026-07-16",
+    "macrostructure": "Stat-Led",
+    "theme": "FinOps source-preserved",
+    "theme_axes": "dark / geometric-sans / chromatic-lime",
+    "vibe": "technical portfolio capital statement",
+    "enrichment": "none",
+    "nav": "N3 shared AppShell",
+    "footer": "none",
+    "brief": "FinOps portfolio redesign"
+  },
+  {
+    "date": "2026-07-16",
     "macrostructure": "Workbench",
     "theme": "FinOps source-preserved",
     "theme_axes": "dark / geometric-sans / chromatic-lime",

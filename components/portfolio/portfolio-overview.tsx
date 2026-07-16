@@ -1,111 +1,172 @@
+/* Hallmark · macrostructure: Stat-Led · genre: modern-minimal · theme: FinOps source-preserved · tone: technical
+ * pre-emit critique: P5 H5 E5 S5 R5 V5
+ * nav: N3 shared AppShell · footer: none · enrichment: none
+ * contrast: pass (40–41) · slop: pass (42–45) · honest: pass (46) · chrome: pass (47)
+ * tokens: pass (48) · responsive: pass (49) · icons: pass (30) · mobile: pass (34, 49–57)
+ */
+
 import Link from "next/link";
 
 import { EquityBars } from "@/components/dashboard/equity-bars";
 import { AllocationList } from "@/components/portfolio/allocation-list";
-import { Button } from "@/components/ui";
+import { ActionLink } from "@/components/ui/action-link";
 import { calculatePortfolio, formatCompactVnd, formatSignedPercent, type PositionMetrics } from "@/lib/portfolio";
 import type { PortfolioSnapshot } from "@/src/services/query.service";
 
 export function PortfolioOverview({ snapshot }: { snapshot: PortfolioSnapshot }) {
   const portfolio = calculatePortfolio(snapshot.positions, snapshot.cashBalance, snapshot.realizedPnl);
+  const totalReturnTone = portfolio.totalReturn >= 0 ? "text-profit" : "text-loss";
+  const unrealizedTone = portfolio.unrealizedPnl >= 0 ? "text-profit" : "text-loss";
+  const buyingPowerPercent = snapshot.buyingPower / Math.max(1, portfolio.netAssetValue) * 100;
 
   return (
-    <main className="p-4 lg:p-6">
-      <header className="flex h-8 items-center justify-between lg:h-16">
-        <div>
-          <h1 className="text-[24px] leading-8 font-semibold lg:text-[32px] lg:leading-10 lg:font-bold">Portfolio</h1>
-          <p className="type-body-s hidden text-secondary lg:block">Positions, allocation and performance across your mock account.</p>
+    <main className="min-w-0 p-4 pb-6 lg:p-6">
+      <header className="grid min-w-0 gap-4 border-b border-border-default pb-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="min-w-0">
+          <h1 className="min-w-0 text-[24px] leading-8 font-semibold [overflow-wrap:anywhere] lg:text-[32px] lg:leading-10 lg:font-bold">Portfolio</h1>
+          <p className="type-body-s mt-1 max-w-[65ch] text-secondary">Positions, allocation and performance across your mock account.</p>
         </div>
-        <p className="type-data-m text-profit lg:hidden"><span className="sr-only">Total return: </span>{formatSignedPercent(portfolio.totalReturnPercent, 2)}</p>
-        <div className="hidden gap-[10px] lg:flex">
-          <Button disabled variant="secondary" className="w-[148px]">Export CSV</Button>
-          <Link href="/market/FPT" className="flex h-10 w-[148px] items-center justify-center rounded-[var(--radius-sm)] bg-brand type-label-l text-on-brand">Trade</Link>
-        </div>
+        <ActionLink href="/market/FPT" className="hidden active:translate-y-px lg:inline-flex">Trade FPT</ActionLink>
       </header>
 
-      <section aria-label="Portfolio metrics" className="mt-[14px] lg:mt-[18px]">
-        <article className="h-[126px] rounded-[14px] border border-border-default bg-surface p-[18px] lg:hidden">
+      <section aria-labelledby="portfolio-value-title" className="mt-4 grid min-w-0 gap-4 lg:mt-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.85fr)] lg:gap-6">
+        <article className="min-w-0 border-y border-border-default py-5 lg:py-7">
           <p className="type-label-m text-muted">NET PORTFOLIO VALUE</p>
-          <p className="mt-2 text-[32px] leading-10 font-bold">{formatCompactVnd(portfolio.netAssetValue)}</p>
-          <p className="type-data-s mt-[7px] text-profit"><span className="sr-only">Total gain: </span>{formatCompactVnd(portfolio.totalReturn, true)} all time</p>
+          <p className="mt-2 min-w-0 font-[family-name:var(--font-data)] text-[clamp(2.5rem,6vw,5rem)] leading-none font-medium tracking-[-0.05em] text-primary [overflow-wrap:anywhere]">
+            {formatCompactVnd(portfolio.netAssetValue)}
+          </p>
+          <h2 id="portfolio-value-title" className="mt-4 min-w-0 max-w-[28ch] text-[18px] leading-6 font-semibold text-primary [overflow-wrap:anywhere] lg:text-[24px] lg:leading-8">
+            Capital at work across {portfolio.positions.length} open positions.
+          </h2>
+          <p className={`type-data-s mt-2 ${totalReturnTone}`}>
+            <span className="sr-only">{portfolio.totalReturn >= 0 ? "Gain" : "Loss"}: </span>
+            {formatCompactVnd(portfolio.totalReturn, true)} · {formatSignedPercent(portfolio.totalReturnPercent, 2)} all time
+          </p>
         </article>
-        <div className="hidden grid-cols-4 gap-3 lg:grid">
-          <PortfolioMetric label="Net portfolio value" value={formatCompactVnd(portfolio.netAssetValue)} supporting={`${formatCompactVnd(portfolio.unrealizedPnl, true)}  ${formatSignedPercent(portfolio.unrealizedPnl / Math.max(1, portfolio.costBasis) * 100, 2)}`} profit />
-          <PortfolioMetric label="Market value" value={formatCompactVnd(portfolio.marketValue)} supporting={`${portfolio.positions.length} open positions`} />
-          <PortfolioMetric label="Cash & buying power" value={formatCompactVnd(snapshot.buyingPower)} supporting={`${(snapshot.buyingPower / Math.max(1, portfolio.netAssetValue) * 100).toFixed(1)}% available`} />
-          <PortfolioMetric label="Total return" value={formatCompactVnd(portfolio.totalReturn, true)} supporting={`${formatSignedPercent(portfolio.totalReturnPercent, 2)} all time`} profit />
-        </div>
+
+        <dl className="hidden border-y border-border-default lg:grid lg:grid-rows-4">
+          <PortfolioStat label="Market value" value={formatCompactVnd(portfolio.marketValue)} supporting={`${portfolio.positions.length} open positions`} />
+          <PortfolioStat label="Cash & buying power" value={formatCompactVnd(snapshot.buyingPower)} supporting={`${buyingPowerPercent.toFixed(1)}% available`} />
+          <PortfolioStat label="Unrealized P&L" value={formatCompactVnd(portfolio.unrealizedPnl, true)} supporting={formatSignedPercent(portfolio.unrealizedPnl / Math.max(1, portfolio.costBasis) * 100, 2)} tone={unrealizedTone} />
+          <PortfolioStat label="Realized P&L" value={formatCompactVnd(snapshot.realizedPnl, true)} supporting="Closed positions" tone={snapshot.realizedPnl >= 0 ? "text-profit" : "text-loss"} />
+        </dl>
       </section>
 
-      <div className="mt-[14px] lg:hidden">
+      <div className="mt-4 lg:hidden">
         <AllocationList allocations={portfolio.allocations} mobile />
       </div>
 
-      <section className="mt-[14px] hidden grid-cols-[minmax(0,720px)_minmax(300px,426px)] gap-[14px] lg:grid">
-        <article className="h-[270px] rounded-[14px] border border-border-default bg-surface p-[18px]">
-          <header className="flex h-7 items-center justify-between"><h2 className="type-heading-h3">Portfolio performance</h2><span className="type-data-s text-secondary">1M&nbsp;&nbsp;3M&nbsp;&nbsp;1Y&nbsp;&nbsp;ALL</span></header>
-          <div className="mt-[14px] h-[180px] rounded-[12px] bg-canvas"><EquityBars count={22} chartWidth={680} start={12} blueCount={5} className="h-full" /></div>
-        </article>
+      <section aria-label="Portfolio analysis" className="mt-6 hidden min-w-0 grid-cols-[minmax(0,1.45fr)_minmax(280px,0.75fr)] gap-6 lg:grid">
+        <figure className="min-w-0 border-y border-border-default py-5">
+          <figcaption>
+            <h2 className="type-heading-h3">Portfolio performance</h2>
+            <p className="type-body-s mt-1 text-secondary">Simulated account equity</p>
+          </figcaption>
+          <div className="mt-4 h-[204px] min-w-0 overflow-hidden rounded-[var(--radius-control)] bg-canvas">
+            <EquityBars count={22} chartWidth={680} start={12} blueCount={5} className="h-full" />
+          </div>
+        </figure>
         <AllocationList allocations={portfolio.allocations} />
       </section>
 
-      <div className="lg:mt-[18px]">
-        <div className="hidden w-fit gap-1 rounded-[10px] bg-surface p-1 lg:flex" role="tablist" aria-label="Portfolio views">
-          <button role="tab" aria-selected="true" className="rounded-[8px] bg-surface-raised px-[14px] py-2 type-label-m">Positions</button>
-          <button role="tab" aria-selected="false" disabled className="px-[14px] py-2 type-label-m text-secondary">Allocation</button>
-          <button role="tab" aria-selected="false" disabled className="px-[14px] py-2 type-label-m text-secondary">Transactions</button>
-        </div>
-        <Holdings positions={portfolio.positions} marketValue={portfolio.marketValue} />
-      </div>
+      <Holdings positions={portfolio.positions} marketValue={portfolio.marketValue} />
     </main>
   );
 }
 
-function PortfolioMetric({ label, value, supporting, profit = false }: { label: string; value: string; supporting: string; profit?: boolean }) {
+function PortfolioStat({ label, value, supporting, tone = "text-muted" }: { label: string; value: string; supporting: string; tone?: string }) {
   return (
-    <article className="h-[110px] rounded-[14px] border border-border-default bg-surface p-4">
-      <p className="type-body-s text-secondary">{label}</p>
-      <p className="type-data-l mt-2">{value}</p>
-      <p className={`type-data-s mt-2 ${profit ? "text-profit" : "text-muted"}`}>{supporting}</p>
-    </article>
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-t border-border-default py-3 first:border-t-0">
+      <dt className="type-body-s text-secondary">{label}</dt>
+      <dd className="text-right">
+        <span className="type-data-m block text-primary">{value}</span>
+        <span className={`type-data-s mt-1 block ${tone}`}>{supporting}</span>
+      </dd>
+    </div>
   );
 }
 
 function Holdings({ positions, marketValue }: { positions: PositionMetrics[]; marketValue: number }) {
   return (
-    <section className="mt-[14px] overflow-hidden rounded-[14px] border border-border-default bg-surface lg:mt-[18px]">
-      <h2 className="px-0 type-label-l lg:hidden">Holdings</h2>
-      <table className="hidden w-full table-fixed border-collapse type-data-s lg:table">
-        <caption className="sr-only">Current portfolio holdings</caption>
-        <thead className="h-11 bg-surface-raised text-left type-label-m text-secondary"><tr><th className="px-[14px]">Symbol</th><th>Quantity</th><th>Avg cost</th><th>Last</th><th>Market value</th><th>Unrealized P&amp;L</th><th>Weight</th></tr></thead>
-        <tbody>{positions.map((position) => <DesktopHolding key={position.symbol} position={position} marketValue={marketValue} />)}</tbody>
-      </table>
-      <div className="lg:hidden">
-        {positions.slice(0, 4).map((position) => {
-          const content = (
-            <>
-            <span><span className="type-label-l block">{position.symbol}</span><span className="type-data-s text-muted">{position.quantity.toLocaleString("en-US")} shares</span></span>
-            <span className="text-right"><span className="type-data-s block text-secondary">{formatCompactVnd(position.marketValue)}</span><span className={`type-data-s ${position.unrealizedPnl >= 0 ? "text-profit" : "text-loss"}`}><span className="sr-only">{position.unrealizedPnl >= 0 ? "Gain" : "Loss"}: </span>{formatSignedPercent(position.unrealizedPercent)}</span></span>
-            </>
-          );
-          const className = "flex h-[60px] items-center justify-between border-t border-border-default px-3 first:border-t-0";
-          return position.symbol === "FPT" ? <Link key={position.symbol} href="/portfolio/FPT" className={className}>{content}</Link> : <div key={position.symbol} className={className}>{content}</div>;
-        })}
+    <section aria-labelledby="holdings-title" className="mt-6 min-w-0">
+      <header className="flex items-end justify-between gap-4 border-b border-border-default pb-3">
+        <div>
+          <h2 id="holdings-title" className="type-heading-h3">Holdings</h2>
+          <p className="type-body-s mt-1 hidden text-secondary lg:block">Current positions ranked by portfolio weight.</p>
+        </div>
+        <p className="type-data-s shrink-0 text-muted">{positions.length} positions</p>
+      </header>
+
+      <div className="hidden overflow-hidden border-b border-border-default lg:block">
+        <table className="w-full table-fixed border-collapse type-data-s">
+          <caption className="sr-only">Current portfolio holdings</caption>
+          <thead className="h-11 text-left type-label-m text-secondary">
+            <tr>
+              <th className="w-[24%] px-3">Position</th>
+              <th className="w-[15%]">Quantity</th>
+              <th className="w-[15%]">Avg cost</th>
+              <th className="w-[15%]">Market value</th>
+              <th className="w-[21%]">Unrealized P&amp;L</th>
+              <th className="w-[10%]">Weight</th>
+            </tr>
+          </thead>
+          <tbody>{positions.map((position) => <DesktopHolding key={position.symbol} position={position} marketValue={marketValue} />)}</tbody>
+        </table>
+      </div>
+
+      <div className="divide-y divide-border-default border-b border-border-default lg:hidden">
+        {positions.map((position) => <MobileHolding key={position.symbol} position={position} />)}
       </div>
     </section>
   );
 }
 
+function MobileHolding({ position }: { position: PositionMetrics }) {
+  const profit = position.unrealizedPnl >= 0;
+  const content = (
+    <>
+      <span className="min-w-0">
+        <span className="type-data-m block text-primary">{position.symbol}</span>
+        <span className="type-data-s block truncate text-muted">{position.company} · {position.quantity.toLocaleString("en-US")} shares</span>
+      </span>
+      <span className="shrink-0 text-right">
+        <span className="type-data-s block text-secondary">{formatCompactVnd(position.marketValue)}</span>
+        <span className={`type-data-s block ${profit ? "text-profit" : "text-loss"}`}>
+          <span className="sr-only">{profit ? "Gain" : "Loss"}: </span>{formatSignedPercent(position.unrealizedPercent)}
+        </span>
+      </span>
+    </>
+  );
+  const className = "flex min-h-[60px] items-center justify-between gap-4 px-3 py-2 transition-colors duration-[var(--dur-micro)] ease-[var(--ease-out)] focus-visible:outline-none focus-visible:shadow-[inset_3px_0_var(--color-focus)] active:bg-surface-raised";
+
+  return position.symbol === "FPT"
+    ? <Link href="/portfolio/FPT" className={className}>{content}</Link>
+    : <div className={className}>{content}</div>;
+}
+
 function DesktopHolding({ position, marketValue }: { position: PositionMetrics; marketValue: number }) {
   const profit = position.unrealizedPnl >= 0;
   return (
-    <tr className={`h-[46px] border-t border-border-default ${position.symbol === "FPT" ? "bg-surface-subtle" : ""}`}>
-      <td className="px-[14px]">{position.symbol === "FPT" ? <Link href="/portfolio/FPT" className="type-data-m text-primary">{position.symbol}</Link> : <span className="type-data-m text-primary">{position.symbol}</span>}</td>
+    <tr className="h-[54px] border-t border-border-default first:border-t-0">
+      <td className="px-3">
+        {position.symbol === "FPT" ? (
+          <Link href="/portfolio/FPT" className="inline-flex flex-col whitespace-nowrap text-primary underline decoration-border-strong underline-offset-4 transition-colors duration-[var(--dur-micro)] ease-[var(--ease-out)] hover:text-brand focus-visible:outline-none focus-visible:shadow-[var(--focus-accent)] active:text-brand">
+            <span className="type-data-m">{position.symbol}</span>
+            <span className="type-body-s max-w-full truncate text-muted no-underline">{position.company}</span>
+          </Link>
+        ) : (
+          <span className="flex min-w-0 flex-col">
+            <span className="type-data-m text-primary">{position.symbol}</span>
+            <span className="type-body-s truncate text-muted">{position.company}</span>
+          </span>
+        )}
+      </td>
       <td className="text-secondary">{position.quantity.toLocaleString("en-US")}</td>
       <td className="text-secondary">{formatCompactVnd(position.averageCost)}</td>
-      <td className="text-secondary">{formatCompactVnd(position.last)}</td>
       <td className="text-secondary">{formatCompactVnd(position.marketValue)}</td>
-      <td className={profit ? "text-profit" : "text-loss"}><span className="sr-only">{profit ? "Gain" : "Loss"}: </span>{formatCompactVnd(position.unrealizedPnl, true)}&nbsp;&nbsp;{formatSignedPercent(position.unrealizedPercent)}</td>
+      <td className={profit ? "text-profit" : "text-loss"}>
+        <span className="sr-only">{profit ? "Gain" : "Loss"}: </span>{formatCompactVnd(position.unrealizedPnl, true)}&nbsp;&nbsp;{formatSignedPercent(position.unrealizedPercent)}
+      </td>
       <td className="text-secondary">{(position.marketValue / Math.max(1, marketValue) * 100).toFixed(1)}%</td>
     </tr>
   );

@@ -9,9 +9,9 @@ export type WorkspaceSection = "dashboard" | "market" | "portfolio" | "orders" |
 
 export function AppShell({ user, children, current = "dashboard" }: { user: DemoUser; children: ReactNode; current?: WorkspaceSection }) {
   return (
-    <div className="flex h-dvh overflow-hidden bg-canvas">
+    <div className="fixed inset-0 flex overflow-hidden bg-canvas">
       <Sidebar user={user} current={current} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Topbar current={current} />
         <MobileHeader user={user} />
         <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
