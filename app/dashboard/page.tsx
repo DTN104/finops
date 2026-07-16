@@ -93,7 +93,7 @@ export default async function DashboardPage() {
 
   return (
     <AppShell user={user}>
-      <main className="mx-auto w-full max-w-[1280px] px-4 pb-6 pt-5 lg:px-8 lg:pb-12 lg:pt-7">
+      <main className="w-full px-4 pb-6 pt-5 lg:px-8 lg:pb-12 lg:pt-7">
         <header className="flex min-w-0 items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="type-body-s text-secondary lg:hidden">Good morning, {user.name.split(" ")[0]}</p>
@@ -108,7 +108,7 @@ export default async function DashboardPage() {
           </div>
         </header>
 
-        <section aria-label="Portfolio metrics" className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.85fr)]">
+        <section aria-label="Portfolio metrics" className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
           <article className="flex min-h-[208px] min-w-0 flex-col rounded-[var(--radius-card)] border border-[var(--color-rule)] bg-[var(--color-paper-2)] p-5 lg:min-h-[264px] lg:p-6">
             <div className="flex items-start justify-between gap-4">
               <p className="type-label-m text-[var(--color-muted)]">NET PORTFOLIO VALUE</p>
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        <section className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.8fr)]">
+        <section className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
           <article className="min-w-0 rounded-[var(--radius-card)] border border-[var(--color-rule)] bg-[var(--color-paper-2)] p-4 lg:p-5">
             <div className="flex items-center justify-between gap-4">
               <h2 className="text-[16px] leading-6 font-semibold lg:text-[20px] lg:leading-7">30-day equity curve</h2>
