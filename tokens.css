@@ -1,0 +1,58 @@
+/* Hallmark · macrostructure: Workbench · genre: modern-minimal · theme: FinOps source-preserved · tone: austere
+ * pre-emit critique: P5 H5 E5 S5 R5 V5
+ * nav: N3 Side-rail (left / 20ch / filled bar) · footer: none · enrichment: none
+ * paper: oklch(16.89% 0.0236 248.56) · accent: oklch(85.30% 0.1949 116.18)
+ * display: Inter · body: Inter · data: IBM Plex Mono · axes: dark / geometric-sans / chromatic-lime
+ * contrast: pass (40–41) · slop: pass (42–45) · honest: pass (46) · chrome: pass (47)
+ * tokens: pass (48) · responsive: pass (49) · icons: pass (30) · mobile: pass (34, 49–57)
+ */
+
+:root {
+  --color-paper: oklch(16.89% 0.0236 248.56);
+  --color-paper-2: oklch(19.63% 0.0292 251.51);
+  --color-paper-3: oklch(22.62% 0.033 251.18);
+  --color-ink: oklch(96% 0.006 251);
+  --color-ink-2: oklch(84.13% 0.0171 250.87);
+  --color-muted: oklch(71.93% 0.0282 251.74);
+  --color-rule: oklch(30.66% 0.0483 250.71);
+  --color-accent: oklch(85.3% 0.1949 116.18);
+  --color-accent-ink: oklch(16.89% 0.0236 248.56);
+  --color-focus: oklch(88% 0.2 116.18);
+  --color-profit: oklch(72.27% 0.192 149.58);
+  --color-loss: oklch(63.68% 0.2078 25.33);
+  --color-warning: oklch(76.86% 0.1647 70.08);
+  --color-info: oklch(62.31% 0.188 259.81);
+
+  --font-display: var(--font-inter), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
+  --font-data: var(--font-ibm-plex-mono), monospace;
+
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 18px;
+  --text-lg: 24px;
+  --text-xl: 32px;
+  --text-display: clamp(2.25rem, 5vw, 3.5rem);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --rule-default: 1px solid var(--color-rule);
+  --radius-card: 14px;
+  --radius-control: 8px;
+  --radius-pill: 9999px;
+}

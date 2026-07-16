@@ -1,0 +1,10 @@
+{
+  "date": "2026-07-16",
+  "package_mtime": 1784110995,
+  "font_stack": "Inter + IBM Plex Mono via next/font",
+  "palette": "Figma-derived FinOps semantic tokens with #C9DD03 accent",
+  "motion": "motion-cut; no animation library installed",
+  "spacing": "4px CSS custom-property scale",
+  "framework": "Next.js 16 App Router + TypeScript + Tailwind CSS 4",
+  "preserve": ["font stack", "palette", "spacing scale", "AppShell"]
+}
