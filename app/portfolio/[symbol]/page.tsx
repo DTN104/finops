@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { PositionDetail } from "@/components/portfolio/position-detail";
 import { AppShell } from "@/components/shell/app-shell";
 import { getDemoSession } from "@/lib/session";
-import { getPortfolioSnapshot } from "@/src/services/query.service";
+import { getPortfolioSnapshot } from "@/server/services/query.service";
 
 export default async function PositionDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
   const user = await getDemoSession();

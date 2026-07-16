@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { CorporateActionsList } from "@/components/operations/corporate-actions-screen";
 import { AppShell } from "@/components/shell/app-shell";
 import { canManageOperations, getDemoSession } from "@/lib/session";
-import { getCorporateActionViews } from "@/src/services/query.service";
+import { getCorporateActionViews } from "@/server/services/query.service";
 
 export default async function CorporateActionsPage() {
   const user = await getDemoSession();

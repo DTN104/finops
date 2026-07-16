@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { SettingsScreen } from "@/components/operations/admin-screens";
 import { AppShell } from "@/components/shell/app-shell";
 import { canManageOperations, getDemoSession } from "@/lib/session";
-import { getWorkspaceSettings } from "@/src/services/query.service";
+import { getWorkspaceSettings } from "@/server/services/query.service";
 
 export default async function SettingsPage() {
   const user = await getDemoSession();

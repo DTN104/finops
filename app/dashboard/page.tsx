@@ -7,7 +7,7 @@ import { DataTable, MetricCard, type DataTableColumn, type MetricCardTrend } fro
 import { formatMarketPrice, formatPercent, marketInstruments } from "@/lib/market-data";
 import { calculatePortfolio, formatCompactVnd, formatSignedPercent } from "@/lib/portfolio";
 import { getDemoSession } from "@/lib/session";
-import { getPortfolioSnapshot } from "@/src/services/query.service";
+import { getPortfolioSnapshot } from "@/server/services/query.service";
 
 interface Holding {
   symbol: string;

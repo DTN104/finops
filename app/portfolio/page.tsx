@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { PortfolioOverview } from "@/components/portfolio/portfolio-overview";
 import { AppShell } from "@/components/shell/app-shell";
 import { getDemoSession } from "@/lib/session";
-import { getPortfolioSnapshot } from "@/src/services/query.service";
+import { getPortfolioSnapshot } from "@/server/services/query.service";
 
 export default async function PortfolioPage() {
   const user = await getDemoSession();

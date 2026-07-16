@@ -11,7 +11,7 @@ import { EquityBars } from "@/components/dashboard/equity-bars";
 import { AllocationList } from "@/components/portfolio/allocation-list";
 import { ActionLink } from "@/components/ui/action-link";
 import { calculatePortfolio, formatCompactVnd, formatSignedPercent, type PositionMetrics } from "@/lib/portfolio";
-import type { PortfolioSnapshot } from "@/src/services/query.service";
+import type { PortfolioSnapshot } from "@/server/services/query.service";
 
 export function PortfolioOverview({ snapshot }: { snapshot: PortfolioSnapshot }) {
   const portfolio = calculatePortfolio(snapshot.positions, snapshot.cashBalance, snapshot.realizedPnl);

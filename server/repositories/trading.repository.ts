@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
-import type { DbExecutor } from "@/src/db";
-import { executions, orders } from "@/src/db/schema";
+import type { DbExecutor } from "@/server/db";
+import { executions, orders } from "@/server/db/schema";
 
 export async function findOrder(executor: DbExecutor, reference: string, lock = false) {
   const query = executor.select().from(orders)

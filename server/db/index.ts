@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
-import { databaseEnv } from "@/src/db/env";
-import * as schema from "@/src/db/schema";
+import { databaseEnv } from "@/server/db/env";
+import * as schema from "@/server/db/schema";
 
 const globalForDatabase = globalThis as unknown as { finopsPool?: Pool };
 

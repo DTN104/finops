@@ -1,5 +1,5 @@
-import type { DbExecutor } from "@/src/db";
-import { createAuditLog } from "@/src/repositories/audit.repository";
+import type { DbExecutor } from "@/server/db";
+import { createAuditLog } from "@/server/repositories/audit.repository";
 
 export type MutationResult<T> = { success: true; data: T } | { success: false; error: string };
 

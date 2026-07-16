@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 
-import type { DbExecutor } from "@/src/db";
-import { cashLedger, instruments, positions } from "@/src/db/schema";
+import type { DbExecutor } from "@/server/db";
+import { cashLedger, instruments, positions } from "@/server/db/schema";
 
 export async function findPosition(executor: DbExecutor, accountId: string, symbol: string, lock = false) {
   const query = executor.select().from(positions).where(and(

@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { AppShell } from "@/components/shell/app-shell";
 import { StockDetail } from "@/components/trading/stock-detail";
 import { getDemoSession } from "@/lib/session";
-import { getPortfolioSnapshot } from "@/src/services/query.service";
+import { getPortfolioSnapshot } from "@/server/services/query.service";
 
 export default async function StockDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
   const user = await getDemoSession();

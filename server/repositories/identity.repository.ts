@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 
-import type { DbExecutor } from "@/src/db";
-import { roles, users } from "@/src/db/schema";
+import type { DbExecutor } from "@/server/db";
+import { roles, users } from "@/server/db/schema";
 
 export async function findUserById(executor: DbExecutor, id: string, lock = false) {
   const query = executor.select().from(users).where(eq(users.id, id)).limit(1);

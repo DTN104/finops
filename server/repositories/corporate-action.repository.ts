@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 
-import type { DbExecutor } from "@/src/db";
-import { corporateActions } from "@/src/db/schema";
+import type { DbExecutor } from "@/server/db";
+import { corporateActions } from "@/server/db/schema";
 
 export async function findCorporateAction(executor: DbExecutor, reference: string, lock = false) {
   const query = executor.select().from(corporateActions)

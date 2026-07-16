@@ -12,8 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx src/db/seed.ts",
-    "test": "tsx --test components/ui/components.test.tsx lib/mock-data.test.ts lib/performance-lab.test.ts lib/portfolio.test.ts lib/session.test.ts lib/trading.test.ts src/services/validation.test.ts"
+    "db:seed": "tsx server/db/seed.ts",
+    "test": "tsx --test components/ui/components.test.tsx lib/mock-data.test.ts lib/performance-lab.test.ts lib/portfolio.test.ts lib/session.test.ts lib/trading.test.ts server/services/validation.test.ts"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",

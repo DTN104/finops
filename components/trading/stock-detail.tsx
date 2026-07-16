@@ -11,7 +11,7 @@ import { OrderConfirmationDialog, OrderSuccessDialog, type PreparedOrder } from 
 import { OrderTicket } from "@/components/trading/order-ticket";
 import type { DemoRole } from "@/lib/session";
 import { canPlaceOrders, validateOrder, type MockOrder, type OrderSide } from "@/lib/trading";
-import type { PortfolioSnapshot } from "@/src/services/query.service";
+import type { PortfolioSnapshot } from "@/server/services/query.service";
 
 const stats = [
   { label: "Open", value: "124,800", mobile: true },

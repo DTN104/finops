@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { corporateActionInputSchema, settingsInputSchema } from "@/src/services/operations.service";
-import { placeOrderInputSchema } from "@/src/services/trading.service";
+import { corporateActionInputSchema, settingsInputSchema } from "@/server/services/operations.service";
+import { placeOrderInputSchema } from "@/server/services/trading.service";
 
 test("order persistence input enforces exchange lots and ticks", () => {
   const valid = placeOrderInputSchema.safeParse({

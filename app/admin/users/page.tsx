@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { UserManagementScreen } from "@/components/operations/admin-screens";
 import { AppShell } from "@/components/shell/app-shell";
 import { canManageOperations, getDemoSession } from "@/lib/session";
-import { getManagedUserViews } from "@/src/services/query.service";
+import { getManagedUserViews } from "@/server/services/query.service";
 
 export default async function UsersPage() {
   const user = await getDemoSession();

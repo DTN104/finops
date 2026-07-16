@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 
-import type { DbExecutor } from "@/src/db";
-import { auditLogs, users } from "@/src/db/schema";
+import type { DbExecutor } from "@/server/db";
+import { auditLogs, users } from "@/server/db/schema";
 
 export type AuditLogInput = typeof auditLogs.$inferInsert;
 

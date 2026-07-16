@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 
-import type { DbExecutor } from "@/src/db";
-import { instruments } from "@/src/db/schema";
+import type { DbExecutor } from "@/server/db";
+import { instruments } from "@/server/db/schema";
 
 export async function findInstrument(executor: DbExecutor, symbol: string) {
   const rows = await executor.select().from(instruments).where(eq(instruments.symbol, symbol)).limit(1);

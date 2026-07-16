@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
-import type { DbExecutor } from "@/src/db";
-import { userSettings } from "@/src/db/schema";
+import type { DbExecutor } from "@/server/db";
+import { userSettings } from "@/server/db/schema";
 
 export async function findUserSettings(executor: DbExecutor, userId: string) {
   const rows = await executor.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);

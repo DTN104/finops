@@ -1,5 +1,5 @@
-import { db } from "@/src/db";
-import { findActiveUserByRole, findUserById } from "@/src/repositories/identity.repository";
+import { db } from "@/server/db";
+import { findActiveUserByRole, findUserById } from "@/server/repositories/identity.repository";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i;
 

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { z } from "zod";
 
-import { getActiveSessionUser, getDemoUserForRole } from "@/src/services/session.service";
+import { getActiveSessionUser, getDemoUserForRole } from "@/server/services/session.service";
 
 export const demoRoleSchema = z.enum(["viewer", "trader", "admin"]);
 export type DemoRole = z.infer<typeof demoRoleSchema>;

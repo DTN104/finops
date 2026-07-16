@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { PositionPerformanceChart } from "@/components/portfolio/position-performance-chart";
 import { calculatePortfolio, calculatePosition, formatCompactVnd, formatSignedPercent } from "@/lib/portfolio";
-import type { PortfolioSnapshot } from "@/src/services/query.service";
+import type { PortfolioSnapshot } from "@/server/services/query.service";
 
 export function PositionDetail({ symbol, snapshot }: { symbol: string; snapshot: PortfolioSnapshot }) {
   const portfolio = calculatePortfolio(snapshot.positions, snapshot.cashBalance, snapshot.realizedPnl);

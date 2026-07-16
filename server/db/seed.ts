@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 
-import { db, pool } from "@/src/db";
+import { db, pool } from "@/server/db";
 import {
   auditLogs,
   cashLedger,
@@ -14,7 +14,7 @@ import {
   tradingAccounts,
   users,
   userSettings,
-} from "@/src/db/schema";
+} from "@/server/db/schema";
 
 const ids = {
   users: {

@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import type { OrderDraft } from "@/lib/trading";
 import { getDemoSession } from "@/lib/session";
-import { findActiveAccountByUser } from "@/src/repositories/account.repository";
-import { db } from "@/src/db";
-import { getPortfolioSnapshot } from "@/src/services/query.service";
-import { cancelOrder, fillOrder, placeOrder } from "@/src/services/trading.service";
+import { findActiveAccountByUser } from "@/server/repositories/account.repository";
+import { db } from "@/server/db";
+import { getPortfolioSnapshot } from "@/server/services/query.service";
+import { cancelOrder, fillOrder, placeOrder } from "@/server/services/trading.service";
 
 export async function placeOrderAction(draft: OrderDraft) {
   const user = await getDemoSession();

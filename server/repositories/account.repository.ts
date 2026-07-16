@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 
-import type { DbExecutor } from "@/src/db";
-import { tradingAccounts } from "@/src/db/schema";
+import type { DbExecutor } from "@/server/db";
+import { tradingAccounts } from "@/server/db/schema";
 
 export async function findActiveAccountByUser(executor: DbExecutor, userId: string) {
   const rows = await executor.select().from(tradingAccounts)

@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import { db } from "@/src/db";
-import { findCorporateAction, createCorporateAction, updateCorporateAction } from "@/src/repositories/corporate-action.repository";
-import { findInstrument } from "@/src/repositories/instrument.repository";
-import { findRole, findUserById, setUserRole } from "@/src/repositories/identity.repository";
-import { findUserSettings, saveUserSettings } from "@/src/repositories/settings.repository";
-import { auditMutation, type MutationResult } from "@/src/services/mutation";
+import { db } from "@/server/db";
+import { findCorporateAction, createCorporateAction, updateCorporateAction } from "@/server/repositories/corporate-action.repository";
+import { findInstrument } from "@/server/repositories/instrument.repository";
+import { findRole, findUserById, setUserRole } from "@/server/repositories/identity.repository";
+import { findUserSettings, saveUserSettings } from "@/server/repositories/settings.repository";
+import { auditMutation, type MutationResult } from "@/server/services/mutation";
 
 const uuidSchema = z.string().uuid();
 const roleSchema = z.enum(["viewer", "trader", "admin"]);

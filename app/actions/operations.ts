@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import type { CorporateActionInput, WorkspaceSettings } from "@/lib/operations";
 import type { DemoRole } from "@/lib/session";
 import { getDemoSession } from "@/lib/session";
-import { changeUserRole, publishCorporateAction, saveCorporateAction, updateUserSettings } from "@/src/services/operations.service";
+import { changeUserRole, publishCorporateAction, saveCorporateAction, updateUserSettings } from "@/server/services/operations.service";
 
 const actionType = {
   "Cash Dividend": "cash_dividend",

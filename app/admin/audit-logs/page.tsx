@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AuditLogsScreen } from "@/components/operations/admin-screens";
 import { AppShell } from "@/components/shell/app-shell";
 import { canManageOperations, getDemoSession } from "@/lib/session";
-import { getAuditLogViews } from "@/src/services/query.service";
+import { getAuditLogViews } from "@/server/services/query.service";
 
 export default async function AuditLogsPage() {
   const user = await getDemoSession();
