@@ -1,6 +1,7 @@
 import { db } from "@/server/db";
 import type { AuditLogView, CorporateAction, CorporateActionStatus, ManagedUser, WorkspaceSettings } from "@/lib/operations";
 import { defaultSettings } from "@/lib/operations";
+import { parseDashboardLayout } from "@/lib/dashboard-layout";
 import type { PortfolioPosition } from "@/lib/portfolio";
 import { estimateOrder, type MockOrder, type OrderStatus, type OrderType } from "@/lib/trading";
 import { findActiveAccountByUser } from "@/server/repositories/account.repository";
@@ -146,6 +147,11 @@ export async function getWorkspaceSettings(userId: string): Promise<WorkspaceSet
     performanceTelemetry: settings.performanceTelemetry,
     confirmDestructiveActions: preferences.confirmDestructiveActions !== false,
   };
+}
+
+export async function getDashboardLayout(userId: string) {
+  const settings = await findUserSettings(db, userId);
+  return parseDashboardLayout(settings?.preferences.dashboardLayout);
 }
 
 function prettyJson(value: Record<string, unknown> | null): string | undefined {

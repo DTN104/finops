@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { DashboardDockLayout, type DashboardDockData } from "@/components/dashboard/dashboard-dock-layout";
 import { EquityBars } from "@/components/dashboard/equity-bars";
 import { AppShell } from "@/components/shell/app-shell";
 import { DataTable, MetricCard, type DataTableColumn, type MetricCardTrend } from "@/components/ui";
 import { formatMarketPrice, formatPercent, marketInstruments } from "@/lib/market-data";
 import { calculatePortfolio, formatCompactVnd, formatSignedPercent } from "@/lib/portfolio";
 import { getDemoSession } from "@/lib/session";
-import { getPortfolioSnapshot } from "@/server/services/query.service";
+import { getDashboardLayout, getPortfolioSnapshot } from "@/server/services/query.service";
 
 interface Holding {
   symbol: string;
@@ -42,6 +43,7 @@ export default async function DashboardPage() {
 
   const snapshot = await getPortfolioSnapshot(user.id, user.name);
   if (!snapshot) redirect("/login");
+  const dashboardLayout = await getDashboardLayout(user.id);
 
   const portfolio = calculatePortfolio(snapshot.positions, snapshot.cashBalance, snapshot.realizedPnl);
   const dayPnl = portfolio.positions.reduce((total, position) => total + position.dayPnl, 0);
@@ -88,12 +90,30 @@ export default async function DashboardPage() {
     symbol: instrument.symbol,
     price: formatMarketPrice(instrument.last),
     change: formatPercent(instrument.changePercent),
-    direction: instrument.changePercent >= 0 ? "up" : "down",
+    direction: instrument.changePercent >= 0 ? "up" as const : "down" as const,
   }));
+
+  const dockData: DashboardDockData = {
+    netAssetValue: formatCompactVnd(portfolio.netAssetValue),
+    totalReturn: formatCompactVnd(portfolio.totalReturn, true),
+    totalReturnPercent: formatSignedPercent(portfolio.totalReturnPercent, 2),
+    netDirection,
+    metrics: metrics.map((metric) => ({
+      label: metric.label,
+      value: metric.value,
+      supporting: metric.supporting,
+      trend: metric.trend,
+    })),
+    watchlist,
+    holdings,
+  };
 
   return (
     <AppShell user={user}>
-      <main className="w-full px-4 pb-6 pt-5 lg:px-8 lg:pb-12 lg:pt-7">
+      <div className="hidden h-full min-h-0 lg:block">
+        <DashboardDockLayout data={dockData} initialLayout={dashboardLayout} />
+      </div>
+      <main className="w-full px-4 pb-6 pt-5 lg:hidden">
         <header className="flex min-w-0 items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="type-body-s text-secondary lg:hidden">Good morning, {user.name.split(" ")[0]}</p>

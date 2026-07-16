@@ -10,11 +10,11 @@ Source of truth: Figma node `68:253` and `finops-dockview-dashboard-spec.md`.
 
 ## Current repository finding
 
-The current `dashboard-hallmark` branch does not contain `dockview-react` or an existing Dockview client boundary, custom panel header, edit toolbar, drop overlay, drag preview, splitter overrides, or layout persistence. `app/dashboard/page.tsx` is still the fixed Server Component. Product code must not be changed until the branch or commit containing the existing Dockview feature is available; implementing that architecture here would violate the requested scope.
+The current `dashboard-hallmark` branch did not contain Dockview. With product approval, install `dockview-react`, add one desktop client boundary, keep the fixed mobile Dashboard, and store the serialized layout in the existing per-user `user_settings.preferences` JSONB field so no schema migration is required.
 
 ## Implementation checkpoints
 
-1. Map the existing Dockview client, custom header, toolbar, overlays, preview, and CSS overrides without changing their ownership or behavior.
+1. Configure the desktop Dockview client, custom header, toolbar, overlays, preview, and CSS overrides around the existing Dashboard data and widgets.
 2. Consolidate edit actions into the right-aligned 48px raised toolbar; use the exact edit subtitle and preserve header clearance.
 3. Replace global lime widget outlines with neutral borders; bind blue active-target and dashed reduced-opacity drag-source states to real Dockview state.
 4. Render only the current drop direction. For the Figma state, place a roughly 170px `Dock right` target inside Equity curve; retain dynamic top/right/bottom/left/center support.

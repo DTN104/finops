@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { dashboardLayoutSchema, type DashboardLayout } from "@/lib/dashboard-layout";
 import { db } from "@/server/db";
 import { findCorporateAction, createCorporateAction, updateCorporateAction } from "@/server/repositories/corporate-action.repository";
 import { findInstrument } from "@/server/repositories/instrument.repository";
@@ -200,7 +201,11 @@ export async function updateUserSettings(
     if (!actor || actor.status !== "active") return deny(tx, { actorUserId: actorId, action: "SETTINGS_UPDATE", module: "Settings", resourceType: "user_settings", resourceId: actorId ?? "invalid", origin, error: "Active user not found" });
     if (!parsed.success) return deny(tx, { actorUserId: actor.id, action: "SETTINGS_UPDATE", module: "Settings", resourceType: "user_settings", resourceId: actor.id, origin, error: parsed.error.issues[0]?.message ?? "Invalid settings" });
     const before = await findUserSettings(tx, actor.id);
-    const settings = await saveUserSettings(tx, { userId: actor.id, ...parsed.data });
+    const settings = await saveUserSettings(tx, {
+      userId: actor.id,
+      ...parsed.data,
+      preferences: { ...before?.preferences, ...parsed.data.preferences },
+    });
     await auditMutation(tx, {
       actorUserId: actor.id,
       action: "SETTINGS_UPDATE",
@@ -214,5 +219,44 @@ export async function updateUserSettings(
       after: settings,
     });
     return { success: true, data: settings } as const;
+  });
+}
+
+export async function updateDashboardLayout(
+  actorUserId: string,
+  input: DashboardLayout,
+  origin = "server-action",
+) {
+  return db.transaction(async (tx) => {
+    const actorId = uuidSchema.safeParse(actorUserId).data ?? null;
+    const actor = actorId ? await findUserById(tx, actorId) : null;
+    const parsed = dashboardLayoutSchema.safeParse(input);
+    if (!actor || actor.status !== "active" || !parsed.success) {
+      return { success: false, error: !actor ? "Active user not found" : "Invalid dashboard layout" } as const;
+    }
+
+    const before = await findUserSettings(tx, actor.id);
+    const settings = await saveUserSettings(tx, {
+      userId: actor.id,
+      theme: before?.theme ?? "dark",
+      tableDensity: before?.tableDensity ?? "comfortable",
+      quoteCadenceMs: before?.quoteCadenceMs ?? 500,
+      performanceTelemetry: before?.performanceTelemetry ?? true,
+      timezone: before?.timezone ?? "Asia/Ho_Chi_Minh",
+      preferences: { ...before?.preferences, dashboardLayout: parsed.data },
+    });
+    await auditMutation(tx, {
+      actorUserId: actor.id,
+      action: "DASHBOARD_LAYOUT_UPDATE",
+      module: "Dashboard",
+      resourceType: "dashboard_layout",
+      resourceId: actor.id,
+      origin,
+      outcome: "success",
+      summary: "Updated dashboard layout",
+      before: before?.preferences.dashboardLayout ?? null,
+      after: settings.preferences.dashboardLayout,
+    });
+    return { success: true } as const;
   });
 }

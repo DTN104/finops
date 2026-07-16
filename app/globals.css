@@ -1,5 +1,7 @@
 @import "tailwindcss";
+@import "dockview-react/dist/styles/dockview.css";
 @import "../tokens.css";
+@import "../components/dashboard/dashboard-dockview.css";
 
 :root {
   /* FinOps Primitives */
