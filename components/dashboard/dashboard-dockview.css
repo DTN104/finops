@@ -126,7 +126,8 @@
   --dv-inactivegroup-visiblepanel-tab-color: var(--color-ink);
   --dv-tabs-and-actions-container-height: 44px;
   --dv-tabs-and-actions-container-font-size: 14px;
-  --dv-sash-color: var(--color-rule);
+  --dv-sash-color: transparent;
+  --dv-separator-border: transparent;
   --dv-active-sash-color: var(--color-info);
   --dv-active-sash-transition-delay: 0s;
   --dv-drag-over-background-color: transparent;
@@ -135,7 +136,7 @@
 
 .finops-dockview .dv-groupview {
   overflow: hidden;
-  border: 1px solid var(--color-rule);
+  border: 0;
   border-radius: var(--radius-card);
   background: var(--color-paper-2);
 }
@@ -203,9 +204,6 @@
 .finops-dock-target--center { inset: 18%; }
 .finops-dock-target__pill { display: inline-flex; min-height: 28px; align-items: center; border-radius: var(--radius-pill); background: #c9dd03; padding: 0 12px; color: #071019; font-size: 12px; font-weight: 700; }
 
-.finops-dockview .dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash { width: 2px; margin-left: 1px; }
-.finops-dockview .dv-split-view-container.dv-vertical > .dv-sash-container > .dv-sash { height: 1px; margin-top: 1px; }
-.finops-dock-dashboard.is-editing .finops-dockview .dv-split-view-container.dv-horizontal > .dv-sash-container > .dv-sash { background: color-mix(in oklab, var(--color-info), transparent 22%); }
 .finops-dock-dashboard:not(.is-editing) .finops-dockview .dv-sash { pointer-events: none; }
 
 .finops-edit-help {

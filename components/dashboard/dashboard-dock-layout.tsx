@@ -10,6 +10,7 @@ import {
   type IDockviewPanelProps,
   type Position,
   type SerializedDockview,
+  themeDark,
 } from "dockview-react";
 import { GripVertical, Maximize2, Minimize2, MoreHorizontal, Plus, RotateCcw, Save, X } from "lucide-react";
 
@@ -198,7 +199,7 @@ function DashboardTab({ api }: IDockviewPanelHeaderProps) {
       <span data-dock-grip className="finops-dock-tab__grip" role="button" tabIndex={edit.editing ? 0 : -1} aria-label={`Drag ${api.title ?? "panel"}`}>
         <GripVertical aria-hidden="true" size={16} />
       </span>
-      <span className="finops-dock-tab__title">{api.title}</span>
+      <button type="button" className="finops-dock-tab__title" onClick={(event) => { event.stopPropagation(); api.setActive(); }}>{api.title}</button>
       <span className="finops-dock-tab__actions">
         <button type="button" aria-label={`Minimize ${api.title}`} onClick={(event) => { event.stopPropagation(); edit.minimize(panelId); }}><Minimize2 aria-hidden="true" size={15} /></button>
         <button type="button" aria-label={api.isMaximized() ? `Restore ${api.title}` : `Maximize ${api.title}`} onClick={(event) => {
@@ -218,6 +219,8 @@ const components = {
   watchlist: WatchlistPanel,
   topHoldings: TopHoldingsPanel,
 };
+
+const finopsDockviewTheme = { ...themeDark, gap: 12 };
 
 function addDefaultPanels(api: DockviewApi) {
   api.clear();
@@ -399,6 +402,7 @@ export function DashboardDockLayout({ data, initialLayout }: { data: DashboardDo
             disableFloatingGroups
             singleTabMode="fullwidth"
             tabGroupAccent="off"
+            theme={finopsDockviewTheme}
           />
         </DashboardPanelContext>
         {editing && <div className="finops-edit-help">Drag from grip <span aria-hidden="true">•</span> Drop to dock <span aria-hidden="true">•</span> Esc cancels</div>}
