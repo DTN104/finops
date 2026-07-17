@@ -90,7 +90,7 @@ export function StockDetail({ role, snapshot }: { role: DemoRole; snapshot: Port
           </div>
         </header>
 
-        <section className="grid h-[258px] lg:h-[430px] lg:grid-cols-[minmax(0,760px)_minmax(300px,386px)] lg:gap-[14px]">
+        <section className="grid h-[258px] lg:h-[430px] lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)] lg:gap-[14px]">
           <div className="h-full rounded-[14px] border border-border-default bg-surface p-[14px] lg:p-[18px]">
             <div className="hidden h-7 items-center justify-between lg:flex"><h2 className="type-heading-h3">Price chart</h2><span className="type-data-s text-muted">1D&nbsp;&nbsp;1W&nbsp;&nbsp;1M&nbsp;&nbsp;3M&nbsp;&nbsp;1Y</span></div>
             <CandlestickChart className="h-[230px] lg:mt-[14px] lg:h-[320px]" />

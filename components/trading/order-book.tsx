@@ -2,7 +2,7 @@ import { fptOrderBook, formatMarketPrice } from "@/lib/market-data";
 
 export function OrderBook() {
   return (
-    <section className="hidden h-[318px] rounded-[14px] border border-border-default bg-surface p-[18px] lg:block">
+    <section className="hidden h-full rounded-[14px] border border-border-default bg-surface p-[18px] lg:block">
       <h2 className="type-heading-h3">Order book</h2>
       <table className="mt-0 w-full table-fixed type-data-s">
         <caption className="sr-only">FPT order book</caption>
