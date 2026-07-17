@@ -11,6 +11,7 @@ import {
   type Position,
   type SerializedDockview,
   themeDark,
+  themeLight,
 } from "dockview-react";
 import { GripVertical, Maximize2, Minimize2, Plus, RotateCcw, Save, X } from "lucide-react";
 
@@ -224,7 +225,10 @@ const components = {
   topHoldings: TopHoldingsPanel,
 };
 
-const finopsDockviewTheme = { ...themeDark, gap: 12 };
+const finopsDockviewThemes = {
+  dark: { ...themeDark, gap: 12 },
+  light: { ...themeLight, gap: 12 },
+};
 
 function addDefaultPanels(api: DockviewApi) {
   api.clear();
@@ -258,6 +262,7 @@ function createDragGhost(event: DragEvent, title: string, targetTitle: string) {
 
 export function DashboardDockLayout({ data, initialLayout }: { data: DashboardDockData; initialLayout: DashboardLayout | null }) {
   const [api, setApi] = useState<DockviewApi | null>(null);
+  const [dockviewTheme, setDockviewTheme] = useState(finopsDockviewThemes.dark);
   const [editing, setEditing] = useState(false);
   const [draggingPanelId, setDraggingPanelId] = useState<string | null>(null);
   const [target, setTarget] = useState<{ groupId: string | null; position: Position | null }>({ groupId: null, position: null });
@@ -296,6 +301,15 @@ export function DashboardDockLayout({ data, initialLayout }: { data: DashboardDo
   useEffect(() => {
     api?.updateOptions({ locked: !editing });
   }, [api, editing]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const updateTheme = () => setDockviewTheme(root.dataset.theme === "light" ? finopsDockviewThemes.light : finopsDockviewThemes.dark);
+    const observer = new MutationObserver(updateTheme);
+    updateTheme();
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!editing) return;
@@ -398,7 +412,7 @@ export function DashboardDockLayout({ data, initialLayout }: { data: DashboardDo
       <section className="finops-dock-workspace" aria-label="Customizable dashboard panels">
         <DashboardPanelContext value={{ data, edit: editState }}>
           <DockviewReact
-            className="dockview-theme-dark finops-dockview"
+            className="finops-dockview"
             components={components}
             defaultTabComponent={DashboardTab}
             onReady={onReady}
@@ -406,7 +420,7 @@ export function DashboardDockLayout({ data, initialLayout }: { data: DashboardDo
             disableFloatingGroups
             singleTabMode="fullwidth"
             tabGroupAccent="off"
-            theme={finopsDockviewTheme}
+            theme={dockviewTheme}
           />
         </DashboardPanelContext>
         {editing && <div className="finops-edit-help">Drag from grip <span aria-hidden="true">•</span> Drop to dock <span aria-hidden="true">•</span> Esc cancels</div>}

@@ -8,20 +8,20 @@
  */
 
 :root {
-  --color-paper: oklch(16.89% 0.0236 248.56);
-  --color-paper-2: oklch(19.63% 0.0292 251.51);
-  --color-paper-3: oklch(22.62% 0.033 251.18);
-  --color-ink: oklch(96% 0.006 251);
-  --color-ink-2: oklch(84.13% 0.0171 250.87);
-  --color-muted: oklch(71.93% 0.0282 251.74);
-  --color-rule: oklch(30.66% 0.0483 250.71);
-  --color-accent: oklch(85.3% 0.1949 116.18);
-  --color-accent-ink: oklch(16.89% 0.0236 248.56);
-  --color-focus: oklch(88% 0.2 116.18);
-  --color-profit: oklch(72.27% 0.192 149.58);
-  --color-loss: oklch(63.68% 0.2078 25.33);
-  --color-warning: oklch(76.86% 0.1647 70.08);
-  --color-info: oklch(62.31% 0.188 259.81);
+  --color-paper: var(--finops-bg-canvas);
+  --color-paper-2: var(--finops-bg-surface);
+  --color-paper-3: var(--finops-bg-surface-raised);
+  --color-ink: var(--finops-text-primary);
+  --color-ink-2: var(--finops-text-secondary);
+  --color-muted: var(--finops-text-muted);
+  --color-rule: var(--finops-border-default);
+  --color-accent: var(--finops-bg-brand);
+  --color-accent-ink: var(--finops-text-on-brand);
+  --color-focus: var(--finops-border-focus);
+  --color-profit: var(--finops-status-profit);
+  --color-loss: var(--finops-status-loss);
+  --color-warning: var(--finops-status-warning);
+  --color-info: var(--finops-status-info);
 
   --font-display: var(--font-inter), sans-serif;
   --font-body: var(--font-inter), sans-serif;
