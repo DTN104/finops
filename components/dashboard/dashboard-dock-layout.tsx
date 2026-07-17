@@ -12,7 +12,7 @@ import {
   type SerializedDockview,
   themeDark,
 } from "dockview-react";
-import { GripVertical, Maximize2, Minimize2, MoreHorizontal, Plus, RotateCcw, Save, X } from "lucide-react";
+import { GripVertical, Maximize2, Minimize2, Plus, RotateCcw, Save, X } from "lucide-react";
 
 import { saveDashboardLayoutAction } from "@/app/actions/dashboard-layout";
 import { EquityBars } from "@/components/dashboard/equity-bars";
@@ -189,9 +189,14 @@ function TopHoldingsPanel({ api }: IDockviewPanelProps) {
   );
 }
 
-function DashboardTab({ api }: IDockviewPanelHeaderProps) {
+function DashboardTab({ api, containerApi }: IDockviewPanelHeaderProps) {
   const { edit } = useDashboardPanel();
+  const [isMaximized, setIsMaximized] = useState(api.isMaximized());
   const panelId = api.id as PanelId;
+  useEffect(() => {
+    const subscription = containerApi.onDidMaximizedGroupChange(() => setIsMaximized(api.isMaximized()));
+    return () => subscription.dispose();
+  }, [api, containerApi]);
   return (
     <div className="finops-dock-tab" onPointerDown={(event) => {
       if (!(event.target as Element).closest("[data-dock-grip]")) event.stopPropagation();
@@ -201,13 +206,12 @@ function DashboardTab({ api }: IDockviewPanelHeaderProps) {
       </span>
       <button type="button" className="finops-dock-tab__title" onClick={(event) => { event.stopPropagation(); api.setActive(); }}>{api.title}</button>
       <span className="finops-dock-tab__actions">
-        <button type="button" aria-label={`Minimize ${api.title}`} onClick={(event) => { event.stopPropagation(); edit.minimize(panelId); }}><Minimize2 aria-hidden="true" size={15} /></button>
-        <button type="button" aria-label={api.isMaximized() ? `Restore ${api.title}` : `Maximize ${api.title}`} onClick={(event) => {
+        <button type="button" aria-label={`Close ${api.title}`} onClick={(event) => { event.stopPropagation(); edit.minimize(panelId); }}><X aria-hidden="true" size={15} /></button>
+        <button type="button" aria-label={isMaximized ? `Restore ${api.title}` : `Maximize ${api.title}`} onClick={(event) => {
           event.stopPropagation();
-          if (api.isMaximized()) api.exitMaximized();
+          if (isMaximized) api.exitMaximized();
           else api.maximize();
-        }}><Maximize2 aria-hidden="true" size={15} /></button>
-        <button type="button" aria-label={`More options for ${api.title}`}><MoreHorizontal aria-hidden="true" size={16} /></button>
+        }}>{isMaximized ? <Minimize2 aria-hidden="true" size={15} /> : <Maximize2 aria-hidden="true" size={15} />}</button>
       </span>
     </div>
   );
