@@ -127,20 +127,13 @@ function AccountOverviewPanel({ api }: IDockviewPanelProps) {
   const { data } = useDashboardPanel();
   return (
     <PanelFrame panelId="account-overview" groupId={api.group.id}>
-      <div className="grid h-full grid-cols-[minmax(300px,1.35fr)_repeat(3,minmax(150px,1fr))] divide-x divide-[var(--color-rule)]">
-        <div className="flex min-w-0 flex-col justify-center px-6 py-4">
-          <div className="flex items-center justify-between gap-4 type-label-m text-secondary"><span>NET PORTFOLIO VALUE</span><span className="type-data-s">VND</span></div>
-          <p className="mt-2 truncate font-mono text-[32px] leading-10 font-medium tracking-[-0.03em]">{data.netAssetValue}</p>
-          <div className="mt-2 flex gap-6 type-data-s">
-            <span className={data.netDirection === "up" ? "text-profit" : "text-loss"}>{data.totalReturn}</span>
-            <span className={data.netDirection === "up" ? "text-profit" : "text-loss"}>{data.totalReturnPercent}</span>
-          </div>
-        </div>
-        {data.metrics.map((metric) => (
-          <div key={metric.label} className="flex min-w-0 flex-col justify-center px-5 py-4">
-            <p className="type-label-m text-secondary">{metric.label.toUpperCase()}</p>
-            <p className="type-data-l mt-2 truncate">{metric.value}</p>
-            <p className={`type-body-s mt-1 ${metric.trend === "positive" ? "text-profit" : metric.trend === "negative" ? "text-loss" : "text-secondary"}`}>{metric.supporting}</p>
+      <div className="h-full overflow-auto px-4 pb-3">
+        <div className="flex h-10 items-center justify-end"><Link href="/market" className="text-secondary hover:text-profit focus-visible:outline-2 focus-visible:outline-[var(--color-focus)]">View market</Link></div>
+        {data.watchlist.map((quote) => (
+          <div key={quote.symbol} className="grid min-h-11 grid-cols-3 items-center border-t border-[var(--color-rule)] type-data-s">
+            <span className="type-data-m text-primary">{quote.symbol}</span>
+            <span className="text-center text-secondary">{quote.price}</span>
+            <span className={`text-right ${quote.direction === "up" ? "text-profit" : "text-loss"}`}><span className="sr-only">{quote.direction === "up" ? "Gain" : "Loss"}: </span>{quote.change}</span>
           </div>
         ))}
       </div>
