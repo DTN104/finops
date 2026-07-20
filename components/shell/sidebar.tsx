@@ -6,6 +6,7 @@ import type { DemoUser } from "@/lib/session";
 
 const navItems = [
   { label: "Dashboard", section: "dashboard", href: "/dashboard" },
+  { label: "Test", section: "test", href: "/test" },
   { label: "Market", section: "market", href: "/market" },
   { label: "Portfolio", section: "portfolio", href: "/portfolio" },
   { label: "Orders", section: "orders", href: "/orders" },
