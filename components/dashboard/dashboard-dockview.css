@@ -183,6 +183,30 @@
 .finops-dock-panel.is-active-target { border-color: color-mix(in oklab, var(--color-info), transparent 30%); }
 .finops-dock-panel.is-drag-source { border: 1px dashed var(--finops-slate-500); opacity: .42; }
 
+.finops-account-overview {
+  container-type: inline-size;
+  height: 100%;
+  overflow: auto;
+}
+
+.finops-account-overview__grid {
+  display: grid;
+  min-height: 100%;
+  grid-template-columns: minmax(300px, 1.35fr) repeat(3, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--color-rule);
+}
+
+.finops-account-overview__grid > * { background: var(--color-paper-2); }
+
+@container (max-width: 799px) {
+  .finops-account-overview__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@container (max-width: 419px) {
+  .finops-account-overview__grid { grid-template-columns: minmax(0, 1fr); }
+}
+
 .finops-dockview .dv-drop-target-container,
 .finops-dockview .dv-drop-target-dropzone { opacity: 0 !important; }
 

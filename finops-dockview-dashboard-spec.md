@@ -237,7 +237,7 @@ Suggested boundary:
 ```text
 Dashboard page (Server Component)
   └── loads user, permissions, account data and saved layout
-      └── DashboardDockLayout.client.tsx
+      └── TestDockLayout.client.tsx
           └── DockviewReact
 ```
 
@@ -322,7 +322,7 @@ Adapt names to the existing repository instead of creating duplicate architectur
 src/
 ├── features/dashboard/
 │   ├── components/
-│   │   ├── DashboardDockLayout.client.tsx
+│   │   ├── TestDockLayout.client.tsx
 │   │   ├── DashboardDockHeader.tsx
 │   │   ├── DashboardLayoutToolbar.tsx
 │   │   ├── AddWidgetDrawer.tsx

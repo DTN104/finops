@@ -9,7 +9,7 @@ Tài liệu này mô tả **code đang chạy trong repository**, không mô t�
 `/dashboard` có hai trách nhiệm tách biệt:
 
 1. `app/dashboard/page.tsx` chạy ở server, kiểm tra session, đọc dữ liệu portfolio từ PostgreSQL, tính toán và format dữ liệu.
-2. `DashboardDockLayout` chạy ở client, dùng Dockview để quyết định **widget nào nằm ở đâu, kích thước bao nhiêu, widget nào đang bị thu nhỏ**.
+2. `TestDockLayout` chạy ở client, dùng Dockview để quyết định **widget nào nằm ở đâu, kích thước bao nhiêu, widget nào đang bị thu nhỏ**.
 
 Điểm quan trọng nhất:
 
@@ -33,7 +33,7 @@ DashboardPage (Server Component)
   ├─ tính và format DashboardDockData
   └─ render AppShell
         │
-        ├─ desktop: DashboardDockLayout (Client Component)
+        ├─ desktop: TestDockLayout (Client Component)
         │              │
         │              ├─ fromJSON(layout đã lưu), hoặc
         │              └─ addDefaultPanels(layout mặc định)
@@ -46,7 +46,7 @@ DashboardPage (Server Component)
 | File | Trách nhiệm |
 | --- | --- |
 | `app/dashboard/page.tsx` | Route `/dashboard`, xác thực, đọc và tính dữ liệu, chia giao diện desktop/mobile |
-| `components/dashboard/dashboard-dock-layout.tsx` | Toàn bộ logic Dockview phía client |
+| `components/dashboard/test-dock-layout.tsx` | Toàn bộ logic Dockview phía client |
 | `components/dashboard/dashboard-dockview.css` | Theme, panel, tab, splitter, drag ghost và drop target của Dockview |
 | `components/dashboard/equity-bars.tsx` | Nội dung biểu đồ cột của widget Equity curve |
 | `lib/dashboard-layout.ts` | Zod schema và type của payload layout được lưu |
@@ -171,7 +171,7 @@ interface DashboardDockData {
 
 ```tsx
 <div className="hidden h-full min-h-0 lg:block">
-  <DashboardDockLayout data={dockData} initialLayout={dashboardLayout} />
+  <TestDockLayout data={dockData} initialLayout={dashboardLayout} />
 </div>
 
 <main className="... lg:hidden">
@@ -181,7 +181,7 @@ interface DashboardDockData {
 
 Từ `lg` trở lên, người dùng thấy Dockview. Dưới `lg`, người dùng thấy dashboard mobile cố định.
 
-Lưu ý kỹ: cả hai nhánh vẫn có trong React tree; Tailwind chỉ đổi `display` bằng CSS. Vì vậy ở mobile, `DashboardDockLayout` có thể vẫn hydrate/khởi tạo trong phần tử `display: none`, dù người dùng không nhìn thấy nó.
+Lưu ý kỹ: cả hai nhánh vẫn có trong React tree; Tailwind chỉ đổi `display` bằng CSS. Vì vậy ở mobile, `TestDockLayout` có thể vẫn hydrate/khởi tạo trong phần tử `display: none`, dù người dùng không nhìn thấy nó.
 
 ## 5. Cách các widget React được đăng ký với Dockview
 
@@ -297,7 +297,7 @@ requestAnimationFrame(() => {
 
 `requestAnimationFrame` được dùng vì Dockview cần hoàn tất đo container và dựng grid trước khi nhận kích thước mong muốn.
 
-## 7. Các state trong `DashboardDockLayout`
+## 7. Các state trong `TestDockLayout`
 
 | State/ref | Ý nghĩa |
 | --- | --- |
@@ -594,7 +594,7 @@ getDashboardLayout(user.id)
         └─ hợp lệ → DashboardLayout
                          │
                          ▼
-DashboardDockLayout initialLayout
+TestDockLayout initialLayout
                          │
                          ▼
 onReady → api.fromJSON(initialLayout.dockview)
