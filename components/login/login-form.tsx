@@ -42,12 +42,11 @@ export function LoginForm({ action }: LoginFormProps) {
           </button>
         </span>
       </label>
-      <div className="hidden items-center justify-between lg:flex">
+      <div className="hidden lg:block">
         <label className="type-body-s flex items-center gap-2 text-secondary">
           <input type="checkbox" name="remember" className="size-4 accent-[var(--finops-bg-brand)]" />
           Remember this device
         </label>
-        <span className="type-body-s text-profit">Forgot password?</span>
       </div>
       <button name="role" value="trader" className="type-label-l mt-[2px] h-12 rounded-[var(--radius-sm)] bg-brand text-on-brand transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:shadow-[var(--focus-accent)]">
         Continue as Demo Trader

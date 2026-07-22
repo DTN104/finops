@@ -17,6 +17,10 @@ export interface DemoUser {
 
 export const SESSION_COOKIE = "finops_demo_session";
 
+export function getSessionMaxAge(remember: boolean): number {
+  return remember ? 30 * 24 * 60 * 60 : 30 * 60;
+}
+
 function toDemoUser(user: { id: string; roleCode: string; name: string; email: string; initials: string }): DemoUser | null {
   const parsed = demoRoleSchema.safeParse(user.roleCode);
   if (!parsed.success) return null;
@@ -32,13 +36,13 @@ export async function getDemoSession(): Promise<DemoUser | null> {
   return user ? toDemoUser(user) : null;
 }
 
-export async function createDemoSession(role: DemoRole): Promise<void> {
+export async function createDemoSession(role: DemoRole, remember = false): Promise<void> {
   const user = await getDemoUserForRole(role);
   if (!user) throw new Error(`Seeded ${role} demo user is unavailable`);
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, user.id, {
     httpOnly: true,
-    maxAge: 30 * 60,
+    maxAge: getSessionMaxAge(remember),
     path: "/",
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

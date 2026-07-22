@@ -6,7 +6,7 @@ import { createDemoSession, deleteDemoSession, demoRoleSchema } from "@/lib/sess
 
 export async function loginAsDemoUser(formData: FormData): Promise<void> {
   const role = demoRoleSchema.parse(formData.get("role"));
-  await createDemoSession(role);
+  await createDemoSession(role, formData.get("remember") === "on");
   redirect("/dashboard");
 }
 

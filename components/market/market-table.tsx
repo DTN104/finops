@@ -8,6 +8,7 @@ import {
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type Row,
   type SortingState,
 } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
@@ -16,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useMarketStore } from "@/components/market/market-store";
-import { Pagination, StatusBadge } from "@/components/ui";
+import { DataTable, Pagination, StatusBadge, type DataTableColumn } from "@/components/ui";
 import { formatMarketPrice, formatPercent, type MarketInstrument } from "@/lib/market-data";
 import { cn } from "@/lib/utils";
 
@@ -88,6 +89,21 @@ export function MarketTable() {
   const pageRows = table.getRowModel().rows;
   const page = table.getState().pagination.pageIndex;
   const filteredCount = table.getFilteredRowModel().rows.length;
+  const desktopColumns: DataTableColumn<Row<MarketInstrument>>[] = table.getHeaderGroups()[0].headers.map((header) => ({
+    key: header.id,
+    header: header.column.getCanSort() ? (
+      <button type="button" onClick={header.column.getToggleSortingHandler()} className="inline-flex items-center gap-1 text-left">
+        {flexRender(header.column.columnDef.header, header.getContext())}<ArrowUpDown aria-hidden="true" size={12} />
+      </button>
+    ) : flexRender(header.column.columnDef.header, header.getContext()),
+    cell: (row) => {
+      const cell = row.getVisibleCells().find((candidate) => candidate.column.id === header.column.id);
+      return cell ? flexRender(cell.column.columnDef.cell, cell.getContext()) : null;
+    },
+    className: columnClasses[header.column.id],
+    headerClassName: "h-[46px] px-[14px] type-label-m text-secondary",
+    cellClassName: "h-auto px-[14px]",
+  }));
 
   return (
     <>
@@ -112,33 +128,23 @@ export function MarketTable() {
         </div>
 
         <div className="hidden overflow-hidden rounded-[14px] border border-border-default bg-surface lg:block">
-          <table className="w-full table-fixed border-collapse type-data-s">
-            <thead className="bg-surface-raised text-secondary">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th key={header.id} scope="col" className={cn("h-[46px] px-[14px] text-left type-label-m", columnClasses[header.column.id])}>
-                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                        <button type="button" onClick={header.column.getToggleSortingHandler()} className="inline-flex items-center gap-1 text-left">
-                          {flexRender(header.column.columnDef.header, header.getContext())}<ArrowUpDown aria-hidden="true" size={12} />
-                        </button>
-                      ) : flexRender(header.column.columnDef.header, header.getContext())}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {pageRows.map((row) => {
-                const fpt = row.original.symbol === "FPT";
-                return (
-                  <tr key={row.id} tabIndex={fpt ? 0 : undefined} role={fpt ? "link" : undefined} onClick={fpt ? () => router.push("/market/FPT") : undefined} onKeyDown={fpt ? (event) => { if (event.key === "Enter" || event.key === " ") router.push("/market/FPT"); } : undefined} className={cn("h-[54px] border-t border-border-default", fpt && "cursor-pointer bg-surface-subtle focus:outline-none focus:shadow-[inset_0_0_0_2px_var(--finops-border-focus)]")}>
-                    {row.getVisibleCells().map((cell) => <td key={cell.id} className="px-[14px] text-secondary">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <DataTable
+            caption="Realtime market instruments"
+            columns={desktopColumns}
+            rows={pageRows}
+            getRowKey={(row) => row.id}
+            headerClassName="bg-surface-raised text-secondary"
+            getRowProps={(row) => {
+              const fpt = row.original.symbol === "FPT";
+              return {
+                tabIndex: fpt ? 0 : undefined,
+                role: fpt ? "link" : undefined,
+                onClick: fpt ? () => router.push("/market/FPT") : undefined,
+                onKeyDown: fpt ? (event) => { if (event.key === "Enter" || event.key === " ") router.push("/market/FPT"); } : undefined,
+                className: cn("h-[54px]", fpt && "cursor-pointer bg-surface-subtle focus:outline-none focus:shadow-[inset_0_0_0_2px_var(--finops-border-focus)]"),
+              };
+            }}
+          />
           <div className="flex h-14 items-center justify-between px-[14px]">
             <p className="type-body-s text-secondary">Showing {filteredCount ? page * 10 + 1 : 0}–{Math.min((page + 1) * 10, filteredCount)} of {filteredCount.toLocaleString("en-US")} mock instruments</p>
             <Pagination page={page} pageCount={Math.max(1, table.getPageCount())} onPageChange={table.setPageIndex} />

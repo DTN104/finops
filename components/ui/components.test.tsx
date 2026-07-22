@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import {
   Button,
+  DataTable,
   EmptyState,
   ErrorState,
   FormField,
@@ -160,4 +161,20 @@ test("EmptyState and ErrorState expose their authored content accessibly", () =>
   assert.match(error, /role="alert"/);
   assert.match(error, /API error/);
   assert.match(error, /TRACE MOCK-7F21/);
+});
+
+test("DataTable shares semantic markup and accessible row interaction", () => {
+  const markup = render(
+    <DataTable
+      caption="Market instruments"
+      columns={[{ key: "symbol", header: <button type="button">Symbol</button>, cell: (row) => row.symbol }]}
+      rows={[{ symbol: "FPT" }]}
+      getRowKey={(row) => row.symbol}
+      getRowProps={() => ({ role: "link", tabIndex: 0 })}
+    />,
+  );
+
+  assert.match(markup, /<caption class="sr-only">Market instruments<\/caption>/);
+  assert.match(markup, /<th scope="col"/);
+  assert.match(markup, /<tr role="link" tabindex="0"/);
 });
