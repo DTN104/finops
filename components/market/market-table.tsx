@@ -83,6 +83,7 @@ export function MarketTable() {
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    autoResetPageIndex: false,
     initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
   });
 

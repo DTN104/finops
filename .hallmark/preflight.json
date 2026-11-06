@@ -1,6 +1,6 @@
 {
-  "date": "2026-07-16",
-  "package_mtime": 1784110995,
+  "date": "2026-07-22",
+  "package_mtime": 1784540003,
   "font_stack": "Inter + IBM Plex Mono via next/font",
   "palette": "Figma-derived FinOps semantic tokens with #C9DD03 accent",
   "motion": "motion-cut; no animation library installed",

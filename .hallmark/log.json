@@ -1,5 +1,16 @@
 [
   {
+    "date": "2026-07-22",
+    "macrostructure": "Map / Diagram",
+    "theme": "FinOps source-preserved",
+    "theme_axes": "dark / geometric-sans / chromatic-lime",
+    "vibe": "technical public system map",
+    "enrichment": "none",
+    "nav": "preserved landing header",
+    "footer": "preserved inline footer",
+    "brief": "Add a public system architecture map to the FinOps landing page"
+  },
+  {
     "date": "2026-07-16",
     "macrostructure": "Stat-Led",
     "theme": "FinOps source-preserved",
